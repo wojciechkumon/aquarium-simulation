@@ -1,14 +1,14 @@
 -module(dispatcher).
 
--import(fish, [startFish/2]).
--import(screen, [printTime/2]).
+-import(fish, [startFish/1]).
+-import(screen, [printTime/2, clearFish/2]).
 
 -export([startDispatcher/2]).
 
 % Dispatcher process
 
 startDispatcher(MainPid, StartingFish) ->
-  StartingFishProcesses = spawnFish(StartingFish, self()),
+  StartingFishProcesses = spawnFish(StartingFish),
   dispatcherLoop(MainPid, StartingFishProcesses, 0).
 
 dispatcherLoop(MainPid, FishProcesses, Minutes) ->
@@ -20,12 +20,13 @@ dispatcherLoop(MainPid, FishProcesses, Minutes) ->
       NewFishProcesses = addNewFishToList(FishProcesses),
       dispatcherLoop(MainPid, NewFishProcesses, Minutes);
     timeStep ->
-      dispatcherLoop(MainPid, FishProcesses, timeStep(FishProcesses, Minutes))
+      {NewMinutes, FishLeft} = timeStep(FishProcesses, Minutes),
+      dispatcherLoop(MainPid, FishLeft, NewMinutes)
   end.
 
-spawnFish([], _) -> [];
-spawnFish([Fish | Tail], DispatcherPid) ->
-  [spawn(fish, startFish, [Fish, DispatcherPid]) | spawnFish(Tail, DispatcherPid)].
+spawnFish([]) -> [];
+spawnFish([Fish | Tail]) ->
+  [spawn(fish, startFish, [Fish]) | spawnFish(Tail)].
 
 feed([]) -> endOfFunction;
 feed([FishPid | Tail]) ->
@@ -33,22 +34,31 @@ feed([FishPid | Tail]) ->
   feed(Tail).
 
 addNewFishToList(FishProcesses) ->
-  FishProcesses ++ [spawn(fish, startFish, [gupik, self()])].
+  FishProcesses ++ [spawn(fish, startFish, [gupik])].
 
 timeStep(FishProcesses, Minutes) ->
   NewMinutes = (Minutes + 1) rem 1440,
   printMinutes(NewMinutes),
-  refreshFish(FishProcesses),
-  NewMinutes.
+  FishLeft = refreshFish(FishProcesses),
+  clearDeadFishLines(FishProcesses, FishLeft),
+  {NewMinutes, FishLeft}.
 
 printMinutes(MinutesSum) ->
   Hours = MinutesSum div 60,
   Minutes = MinutesSum rem 60,
   screen:printTime(Hours, Minutes).
 
-refreshFish(FishProcesses) -> refreshFish(FishProcesses, 0).
+refreshFish(FishProcesses) -> refreshFish(FishProcesses, 0, []).
 
-refreshFish([], _) -> ok;
-refreshFish([Fish | Tail], Number) ->
-  Fish ! {refresh, Number},
-  refreshFish(Tail, Number + 1).
+refreshFish([], _, List) -> List;
+refreshFish([Fish | Tail], Number, List) ->
+  Fish ! {refresh, Number, self()},
+  receive
+    {Fish, ok} -> refreshFish(Tail, Number + 1, List ++ [Fish]);
+    {Fish, _} -> refreshFish(Tail, Number + 1, List) % death
+  end.
+
+
+clearDeadFishLines(FishProcesses, FishLeft) ->
+  DeadFishAmount = length(FishProcesses) - length(FishLeft),
+  screen:clearFish(length(FishLeft), DeadFishAmount).
