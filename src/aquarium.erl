@@ -1,8 +1,7 @@
 -module(aquarium).
 
--import(dispatcher, [startDispatcher/2]).
 -import(time, [startTime/1]).
--import(screen, [clear_screen/0, printLastCommand/1, readLine/0]).
+-import(screen, [clearScreen/0, printLastCommand/1, readLine/0]).
 
 -export([start/0]).
 
@@ -27,6 +26,6 @@ handleUserInput(DispatcherPid, Timer) ->
       handleUserInput(DispatcherPid, Timer);
     "end" ->
       timer:cancel(Timer),
-      screen:clear_screen();
+      screen:clearScreen();
     _ -> handleUserInput(DispatcherPid, Timer)
   end.

@@ -24,8 +24,9 @@ handleTimeStep(FishConstants, Hunger, Speed, AliveTime, Number, DispatcherPid) -
   screen:printFish(FishConstants, {Hunger, Speed, AliveTime}, Number),
   NewHunger = changeHunger(Hunger, FishConstants),
   NewAliveTime = AliveTime + 1,
+  Alive = isAlive(NewHunger, NewAliveTime, FishConstants),
   if
-    (NewHunger >= 0) and (NewAliveTime >= 0) ->
+    Alive == true ->
       DispatcherPid ! {self(), ok},
       fishLoop(FishConstants, {NewHunger, Speed, NewAliveTime});
     true ->
@@ -46,3 +47,7 @@ getFishStartingStats() -> {?NOT_HUNGRY, 0, 0}.
 
 changeHunger(Hunger, {_, _, HungerSpeed, _}) ->
   Hunger - HungerSpeed.
+
+
+isAlive(NewHunger, NewAliveTime, {_, MaxLifeTime, _, _}) ->
+  (NewHunger >= 0) and (NewAliveTime < MaxLifeTime).

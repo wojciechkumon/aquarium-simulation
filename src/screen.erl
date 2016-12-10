@@ -2,7 +2,7 @@
 
 -import(listUtil, [listWithSameElements/2]).
 
--export([clear_screen/0, writeXY/3, writeXY/4, printBackground/0,
+-export([clearScreen/0, writeXY/3, writeXY/4, printBackground/0,
   printLastCommand/1, printTime/2, readLine/0, printFish/3, clearFish/2]).
 
 
@@ -25,7 +25,7 @@
 -define(FISH_FIRST_LINE, 7).
 -define(FISH_MAX_LEN, 40).
 
-clear_screen() -> io:format("\e[2J").
+clearScreen() -> io:format("\e[2J").
 
 switchModeString(normal) -> "\e[0m";
 switchModeString(bright) -> "\e[1m";
@@ -37,7 +37,6 @@ switchModeString(negative) -> "\e[7m".
 
 escapeXY(X, Y) ->
   "\e[" ++ integer_to_list(Y) ++ ";" ++ integer_to_list(X) ++ "H".
-
 
 writeXY(X, Y, Message) ->
   writeXY(X, Y, Message, normal).
@@ -52,7 +51,7 @@ moveCursor(X, Y) ->
   io:format(escapeXY(X, Y)).
 
 printBackground() ->
-  clear_screen(),
+  clearScreen(),
   writeXY(?TITLE_INDENT, ?TITLE_LINE, "##### AQUARIUM #####"),
   writeXY(?INDENT, ?POSSIBLE_COMMANDS_LINE, "Possible commands: feed, newFish, end").
 
