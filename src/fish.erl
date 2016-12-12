@@ -10,14 +10,16 @@
 % Fish process
 
 startFish(FishType) ->
-  fishLoop(getFishConstants(FishType), getFishStartingStats()).
+  FishConstants = getFishConstants(FishType),
+  fishLoop(FishConstants, getFishStartingStats(FishConstants)).
 
 fishLoop(FishConstants, {Hunger, Speed, AliveTime}) ->
   receive
     feed ->
       fishLoop(FishConstants, {?NOT_HUNGRY, Speed, AliveTime});
-    {refresh, Number, DispatcherPid} ->
-      handleTimeStep(FishConstants, Hunger, Speed, AliveTime, Number, DispatcherPid)
+    {refresh, Hour, Number, DispatcherPid} ->
+      NewSpeed = calculateSpeed(FishConstants, Speed, Hour),
+      handleTimeStep(FishConstants, Hunger, NewSpeed, AliveTime, Number, DispatcherPid)
   end.
 
 handleTimeStep(FishConstants, Hunger, Speed, AliveTime, Number, DispatcherPid) ->
@@ -42,12 +44,42 @@ getFishConstants(skalar) -> {skalar, 800, 3, 15};
 getFishConstants(gupik) -> {gupik, 900, 4, 7}.
 
 % {Hunger, Speed, AliveTime}
-getFishStartingStats() -> {?NOT_HUNGRY, 0, 0}.
-
+getFishStartingStats({_, _, _, MaxSpeed}) ->
+  {?NOT_HUNGRY, MaxSpeed / 4, 0}.
 
 changeHunger(Hunger, {_, _, HungerSpeed, _}) ->
   Hunger - HungerSpeed.
 
-
 isAlive(NewHunger, NewAliveTime, {_, MaxLifeTime, _, _}) ->
   (NewHunger >= 0) and (NewAliveTime < MaxLifeTime).
+
+calculateSpeed({_, _, _, MaxSpeed}, CurrentSpeed, Hour) ->
+  NewSpeed = round2ndPlace(CurrentSpeed + newDelta()),
+  IsDay = (Hour > 7) and (Hour < 20),
+  if
+    IsDay ->
+      normalizeDaySpeed(NewSpeed, MaxSpeed);
+    true ->
+      normalizeNightSpeed(NewSpeed, MaxSpeed)
+  end.
+
+newDelta() -> rand:normal() / 4.
+
+round2ndPlace(Value) ->
+  round(Value * 10) / 10.
+
+normalizeDaySpeed(Speed, MaxSpeed) ->
+  normalize(Speed, MaxSpeed / 2, MaxSpeed).
+
+normalizeNightSpeed(Speed, MaxSpeed) ->
+  normalize(Speed, 0, MaxSpeed / 2).
+
+normalize(Speed, MinSpeed, MaxSpeed) ->
+  if
+    Speed > MaxSpeed ->
+      round2ndPlace(Speed - abs(newDelta()));
+    Speed < MinSpeed ->
+      round2ndPlace(MinSpeed + abs(newDelta()));
+    true ->
+      Speed
+  end.

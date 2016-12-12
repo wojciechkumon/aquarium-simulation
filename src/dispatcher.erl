@@ -38,7 +38,7 @@ addNewFishToList(FishProcesses) ->
 timeStep(FishProcesses, Minutes) ->
   NewMinutes = (Minutes + 1) rem 1440,
   printTime(NewMinutes),
-  FishLeft = refreshFish(FishProcesses),
+  FishLeft = refreshFish(NewMinutes, FishProcesses),
   clearDeadFishLines(FishProcesses, FishLeft),
   {NewMinutes, FishLeft}.
 
@@ -47,14 +47,15 @@ printTime(MinutesSum) ->
   Minutes = MinutesSum rem 60,
   printer:printTime(Hours, Minutes).
 
-refreshFish(FishProcesses) -> refreshFish(FishProcesses, 0, []).
+refreshFish(Minutes, FishProcesses) -> refreshFish(Minutes, FishProcesses, 0, []).
 
-refreshFish([], _, List) -> List;
-refreshFish([Fish | Tail], Number, List) ->
-  Fish ! {refresh, Number, self()},
+refreshFish(_, [], _, List) -> List;
+refreshFish(Minutes, [Fish | Tail], Number, List) ->
+  Hour = Minutes div 60,
+  Fish ! {refresh, Hour, Number, self()},
   receive
-    {Fish, ok} -> refreshFish(Tail, Number + 1, List ++ [Fish]);
-    {Fish, _} -> refreshFish(Tail, Number + 1, List) % death
+    {Fish, ok} -> refreshFish(Minutes, Tail, Number + 1, List ++ [Fish]);
+    {Fish, _} -> refreshFish(Minutes, Tail, Number + 1, List) % death
   end.
 
 clearDeadFishLines(FishProcesses, FishLeft) ->
