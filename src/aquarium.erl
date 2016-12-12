@@ -1,22 +1,23 @@
 -module(aquarium).
 
 -import(time, [startTime/1]).
--import(screen, [clearScreen/0, printLastCommand/1, readLine/0]).
+-import(printer, [printLastCommand/1, readLine/0]).
+-import(screen, [clearScreen/0]).
 
 -export([start/0]).
 
 % Main process
 
 start() ->
-  screen:printBackground(),
+  printer:printBackground(),
   StartingFish = [neon, skalar],
   DispatcherPid = spawn(dispatcher, startDispatcher, [self(), StartingFish]),
   {_, Timer} = time:startTime(DispatcherPid),
   handleUserInput(DispatcherPid, Timer).
 
 handleUserInput(DispatcherPid, Timer) ->
-  Input = screen:readLine(),
-  screen:printLastCommand(Input),
+  Input = printer:readLine(),
+  printer:printLastCommand(Input),
   case Input of
     "feed" ->
       DispatcherPid ! feed,

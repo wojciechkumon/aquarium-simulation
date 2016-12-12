@@ -1,6 +1,6 @@
 -module(dispatcher).
 
--import(screen, [printTime/2, clearFish/2]).
+-import(printer, [printTime/2, clearFish/2]).
 
 -export([startDispatcher/2]).
 
@@ -45,7 +45,7 @@ timeStep(FishProcesses, Minutes) ->
 printTime(MinutesSum) ->
   Hours = MinutesSum div 60,
   Minutes = MinutesSum rem 60,
-  screen:printTime(Hours, Minutes).
+  printer:printTime(Hours, Minutes).
 
 refreshFish(FishProcesses) -> refreshFish(FishProcesses, 0, []).
 
@@ -59,4 +59,4 @@ refreshFish([Fish | Tail], Number, List) ->
 
 clearDeadFishLines(FishProcesses, FishLeft) ->
   DeadFishAmount = length(FishProcesses) - length(FishLeft),
-  screen:clearFish(length(FishLeft), DeadFishAmount).
+  printer:clearFish(length(FishLeft), DeadFishAmount).

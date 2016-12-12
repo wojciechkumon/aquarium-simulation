@@ -1,6 +1,6 @@
 -module(fish).
 
--import(screen, [printFish/3]).
+-import(printer, [printFish/3]).
 
 -export([startFish/1]).
 
@@ -21,7 +21,7 @@ fishLoop(FishConstants, {Hunger, Speed, AliveTime}) ->
   end.
 
 handleTimeStep(FishConstants, Hunger, Speed, AliveTime, Number, DispatcherPid) ->
-  screen:printFish(FishConstants, {Hunger, Speed, AliveTime}, Number),
+  printer:printFish(FishConstants, {Hunger, Speed, AliveTime}, Number),
   NewHunger = changeHunger(Hunger, FishConstants),
   NewAliveTime = AliveTime + 1,
   Alive = isAlive(NewHunger, NewAliveTime, FishConstants),
