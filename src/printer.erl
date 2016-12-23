@@ -4,7 +4,7 @@
 -import(screen, [clearScreen/0, clearXY/3, writeXY/3, moveCursor/2]).
 
 -export([printBackground/0, printLastCommand/1, printTime/2,
-  readLine/0, printFish/3, clearFish/2]).
+  readLine/0, printFish/3, clearFish/2, printAquariumState/1]).
 
 
 -define(TITLE_LINE, 1).
@@ -23,7 +23,9 @@
 
 -define(POSSIBLE_COMMANDS_LINE, 5).
 
--define(FISH_FIRST_LINE, 7).
+-define(AQUARIUM_STATE_LINE, 7).
+-define(AQUARIUM_STATE_MAX_LEN, 40).
+-define(FISH_FIRST_LINE, 8).
 -define(FISH_MAX_LEN, 40).
 
 
@@ -71,3 +73,10 @@ clearFish(AliveFishAmount, LinesToClear) ->
   screen:clearXY(?INDENT, LineNumber, ?FISH_MAX_LEN),
   moveCursorToInputLine(),
   clearFish(AliveFishAmount, LinesToClear - 1).
+
+printAquariumState({Temperature, HeaterLevel}) ->
+  screen:clearXY(?INDENT, ?AQUARIUM_STATE_LINE, ?AQUARIUM_STATE_MAX_LEN),
+  RoundedTemp = round(Temperature * 10) / 10,
+  screen:writeXY(?INDENT, ?AQUARIUM_STATE_LINE,
+    io_lib:format("Temperature=~p C, heater level=~p", [RoundedTemp, HeaterLevel])),
+  moveCursorToInputLine().
