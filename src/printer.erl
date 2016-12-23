@@ -32,7 +32,8 @@
 printBackground() ->
   screen:clearScreen(),
   screen:writeXY(?TITLE_INDENT, ?TITLE_LINE, "##### AQUARIUM #####"),
-  screen:writeXY(?INDENT, ?POSSIBLE_COMMANDS_LINE, "Possible commands: feed, newFish, end").
+  screen:writeXY(?INDENT, ?POSSIBLE_COMMANDS_LINE,
+    "Possible commands: feed, newFish, heaterHigh, heaterNormal, heaterOff, end").
 
 printLastCommand(LastCommand) ->
   screen:clearXY(?INDENT, ?LAST_COMMAND_LINE, ?LAST_COMMAND_LINE_MAX_LEN),
