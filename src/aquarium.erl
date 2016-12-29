@@ -37,6 +37,9 @@ handleUserInput(DispatcherPid, PrinterPid, Timer) ->
     "heaterOff" ->
       DispatcherPid ! {heater, off},
       handleUserInput(DispatcherPid, PrinterPid, Timer);
+    "clean" ->
+      DispatcherPid ! clean,
+      handleUserInput(DispatcherPid, PrinterPid, Timer);
     "end" ->
       timer:cancel(Timer),
       screen:clearScreen();

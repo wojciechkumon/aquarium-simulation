@@ -1,6 +1,6 @@
 -module(dispatcher).
 
--import(aquariumState, [refreshAquariumState/1]).
+-import(aquariumState, [refreshAquariumState/2, clean/1]).
 
 -export([startDispatcher/3]).
 
@@ -23,6 +23,9 @@ dispatcherLoop(FishProcesses, Minutes, AquariumState, PrinterPid) ->
       dispatcherLoop(FishLeft, NewMinutes, NewAquariumState, PrinterPid);
     {heater, Level} ->
       NewAquariumState = switchHeater(AquariumState, Level),
+      dispatcherLoop(FishProcesses, Minutes, NewAquariumState, PrinterPid);
+    clean ->
+      NewAquariumState = aquariumState:clean(AquariumState),
       dispatcherLoop(FishProcesses, Minutes, NewAquariumState, PrinterPid)
   end.
 
@@ -43,7 +46,7 @@ timeStep(FishProcesses, Minutes, AquariumState, PrinterPid) ->
   printTime(NewMinutes, PrinterPid),
   FishLeft = refreshFish(NewMinutes, FishProcesses),
   clearDeadFishLines(FishProcesses, FishLeft, PrinterPid),
-  NewAquariumState = aquariumState:refreshAquariumState(AquariumState),
+  NewAquariumState = aquariumState:refreshAquariumState(AquariumState, length(FishLeft)),
   PrinterPid ! {printAquariumState, NewAquariumState},
   {FishLeft, NewMinutes, NewAquariumState}.
 

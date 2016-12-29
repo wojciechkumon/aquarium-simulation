@@ -23,7 +23,7 @@
 -define(POSSIBLE_COMMANDS_LINE, 5).
 
 -define(AQUARIUM_STATE_LINE, 7).
--define(AQUARIUM_STATE_MAX_LEN, 40).
+-define(AQUARIUM_STATE_MAX_LEN, 60).
 -define(FISH_FIRST_LINE, 8).
 -define(FISH_MAX_LEN, 80).
 
@@ -62,7 +62,7 @@ printBackground() ->
   screen:clearScreen(),
   screen:writeXY(?TITLE_INDENT, ?TITLE_LINE, "##### AQUARIUM #####"),
   screen:writeXY(?INDENT, ?POSSIBLE_COMMANDS_LINE,
-    "Possible commands: feed, newFish, heaterHigh, heaterNormal, heaterOff, end"),
+    "Possible commands: feed, newFish, heaterHigh, heaterNormal, heaterOff, clean, end"),
   screen:writeXY(?INDENT, ?INPUT_LINE, "Enter command: "),
   moveCursorToInputLine().
 
@@ -88,11 +88,14 @@ moveCursorToInputLine() ->
   screen:moveCursor(?INDENT + ?INPUT_TEXT_START, ?INPUT_LINE).
 
 printFish({FishType, LifeTime, _, _}, {Hunger, Speed, AliveTime}, Number) ->
+  RoundedHunger = round(Hunger * 10) / 100,
+  RoundedSpeed = round(Speed * 10) / 10,
+  RoundedLife = round((LifeTime - AliveTime)/60),
   LineNumber = ?FISH_FIRST_LINE + Number,
   screen:clearXY(?INDENT, LineNumber, ?FISH_MAX_LEN),
   screen:writeXY(?INDENT, LineNumber,
-    io_lib:format("<>< ~p, alive time left=~p, Hunger=~p, Speed=~p",
-      [FishType, LifeTime - AliveTime, Hunger, Speed])),
+    io_lib:format("<>< ~p, alive time left=~ph, Hunger=~p%, Speed=~p m/s",
+      [FishType, RoundedLife, RoundedHunger, RoundedSpeed])),
   moveCursorToInputLine().
 
 clearFish(_, 0) -> ok;
@@ -102,9 +105,10 @@ clearFish(AliveFishAmount, LinesToClear) ->
   moveCursorToInputLine(),
   clearFish(AliveFishAmount, LinesToClear - 1).
 
-printAquariumState({Temperature, HeaterLevel}) ->
+printAquariumState({{Temperature, HeaterLevel}, Dirt}) ->
   RoundedTemp = round(Temperature * 10) / 10,
+  RoundedDirt = round(Dirt * 10) / 10,
   screen:clearXY(?INDENT, ?AQUARIUM_STATE_LINE, ?AQUARIUM_STATE_MAX_LEN),
   screen:writeXY(?INDENT, ?AQUARIUM_STATE_LINE,
-    io_lib:format("Temperature=~p C, heater level=~p", [RoundedTemp, HeaterLevel])),
+    io_lib:format("Temperature=~p C, heater level=~p, Dirt=~p%", [RoundedTemp, HeaterLevel, RoundedDirt])),
   moveCursorToInputLine().
