@@ -1,7 +1,7 @@
 -module(aquarium).
 
 -import(time, [startTime/1]).
--import(printer, [printLastCommand/1, readLine/0]).
+-import(printer, [readLine/0]).
 -import(screen, [clearScreen/0]).
 -import(aquariumState, [startingAquariumState/0]).
 
@@ -10,34 +10,35 @@
 % Main process
 
 start() ->
-  printer:printBackground(),
+  PrinterPid = spawn(printer, startPrinter, []),
+  PrinterPid ! printBackground,
   StartingFish = [neon, skalar],
   StartingAquariumState = aquariumState:startingAquariumState(),
-  DispatcherPid = spawn(dispatcher, startDispatcher, [StartingFish, StartingAquariumState]),
+  DispatcherPid = spawn(dispatcher, startDispatcher, [StartingFish, StartingAquariumState, PrinterPid]),
   {_, Timer} = time:startTime(DispatcherPid),
-  handleUserInput(DispatcherPid, Timer).
+  handleUserInput(DispatcherPid, PrinterPid, Timer).
 
-handleUserInput(DispatcherPid, Timer) ->
+handleUserInput(DispatcherPid, PrinterPid, Timer) ->
   Input = printer:readLine(),
-  printer:printLastCommand(Input),
+  PrinterPid ! {printLastCommand, Input},
   case Input of
     "feed" ->
       DispatcherPid ! feed,
-      handleUserInput(DispatcherPid, Timer);
+      handleUserInput(DispatcherPid, PrinterPid, Timer);
     "newFish" ->
       DispatcherPid ! newFish,
-      handleUserInput(DispatcherPid, Timer);
+      handleUserInput(DispatcherPid, PrinterPid, Timer);
     "heaterHigh" ->
       DispatcherPid ! {heater, high},
-      handleUserInput(DispatcherPid, Timer);
+      handleUserInput(DispatcherPid, PrinterPid, Timer);
     "heaterNormal" ->
       DispatcherPid ! {heater, normal},
-      handleUserInput(DispatcherPid, Timer);
+      handleUserInput(DispatcherPid, PrinterPid, Timer);
     "heaterOff" ->
       DispatcherPid ! {heater, off},
-      handleUserInput(DispatcherPid, Timer);
+      handleUserInput(DispatcherPid, PrinterPid, Timer);
     "end" ->
       timer:cancel(Timer),
       screen:clearScreen();
-    _ -> handleUserInput(DispatcherPid, Timer)
+    _ -> handleUserInput(DispatcherPid, PrinterPid, Timer)
   end.

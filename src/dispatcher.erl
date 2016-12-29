@@ -1,57 +1,56 @@
 -module(dispatcher).
 
--import(printer, [printTime/2, clearFish/2, printAquariumState/1]).
 -import(aquariumState, [refreshAquariumState/1]).
 
--export([startDispatcher/2]).
+-export([startDispatcher/3]).
 
 % Dispatcher process
 
-startDispatcher(StartingFish, StartingAquariumState) ->
-  StartingFishProcesses = spawnFish(StartingFish),
-  dispatcherLoop(StartingFishProcesses, 0, StartingAquariumState).
+startDispatcher(StartingFish, StartingAquariumState, PrinterPid) ->
+  StartingFishProcesses = spawnFish(StartingFish, PrinterPid),
+  dispatcherLoop(StartingFishProcesses, 0, StartingAquariumState, PrinterPid).
 
-dispatcherLoop(FishProcesses, Minutes, AquariumState) ->
+dispatcherLoop(FishProcesses, Minutes, AquariumState, PrinterPid) ->
   receive
     feed ->
       feed(FishProcesses),
-      dispatcherLoop(FishProcesses, Minutes, AquariumState);
+      dispatcherLoop(FishProcesses, Minutes, AquariumState, PrinterPid);
     newFish ->
-      NewFishProcesses = addNewFishToList(FishProcesses),
-      dispatcherLoop(NewFishProcesses, Minutes, AquariumState);
+      NewFishProcesses = addNewFishToList(FishProcesses, PrinterPid),
+      dispatcherLoop(NewFishProcesses, Minutes, AquariumState, PrinterPid);
     timeStep ->
-      {FishLeft, NewMinutes, NewAquariumState} = timeStep(FishProcesses, Minutes, AquariumState),
-      dispatcherLoop(FishLeft, NewMinutes, NewAquariumState);
+      {FishLeft, NewMinutes, NewAquariumState} = timeStep(FishProcesses, Minutes, AquariumState, PrinterPid),
+      dispatcherLoop(FishLeft, NewMinutes, NewAquariumState, PrinterPid);
     {heater, Level} ->
       NewAquariumState = switchHeater(AquariumState, Level),
-      dispatcherLoop(FishProcesses, Minutes, NewAquariumState)
+      dispatcherLoop(FishProcesses, Minutes, NewAquariumState, PrinterPid)
   end.
 
-spawnFish([]) -> [];
-spawnFish([Fish | Tail]) ->
-  [spawn(fish, startFish, [Fish]) | spawnFish(Tail)].
+spawnFish([], _) -> [];
+spawnFish([Fish | Tail], PrinterPid) ->
+  [spawn(fish, startFish, [Fish, PrinterPid]) | spawnFish(Tail, PrinterPid)].
 
 feed([]) -> ok;
 feed([FishPid | Tail]) ->
   FishPid ! feed,
   feed(Tail).
 
-addNewFishToList(FishProcesses) ->
-  FishProcesses ++ [spawn(fish, startFish, [gupik])].
+addNewFishToList(FishProcesses, PrinterPid) ->
+  FishProcesses ++ [spawn(fish, startFish, [gupik, PrinterPid])].
 
-timeStep(FishProcesses, Minutes, AquariumState) ->
+timeStep(FishProcesses, Minutes, AquariumState, PrinterPid) ->
   NewMinutes = (Minutes + 1) rem 1440,
-  printTime(NewMinutes),
+  printTime(NewMinutes, PrinterPid),
   FishLeft = refreshFish(NewMinutes, FishProcesses),
-  clearDeadFishLines(FishProcesses, FishLeft),
+  clearDeadFishLines(FishProcesses, FishLeft, PrinterPid),
   NewAquariumState = aquariumState:refreshAquariumState(AquariumState),
-  printer:printAquariumState(NewAquariumState),
+  PrinterPid ! {printAquariumState, NewAquariumState},
   {FishLeft, NewMinutes, NewAquariumState}.
 
-printTime(MinutesSum) ->
+printTime(MinutesSum, PrinterPid) ->
   Hours = MinutesSum div 60,
   Minutes = MinutesSum rem 60,
-  printer:printTime(Hours, Minutes).
+  PrinterPid ! {printTime, Hours, Minutes}.
 
 refreshFish(Minutes, FishProcesses) -> refreshFish(Minutes, FishProcesses, 0, []).
 
@@ -64,8 +63,8 @@ refreshFish(Minutes, [Fish | Tail], Number, List) ->
     {Fish, _} -> refreshFish(Minutes, Tail, Number + 1, List) % death
   end.
 
-clearDeadFishLines(FishProcesses, FishLeft) ->
+clearDeadFishLines(FishProcesses, FishLeft, PrinterPid) ->
   DeadFishAmount = length(FishProcesses) - length(FishLeft),
-  printer:clearFish(length(FishLeft), DeadFishAmount).
+  PrinterPid ! {clearFish, length(FishLeft), DeadFishAmount}.
 
 switchHeater({Temperature, _}, Level) -> {Temperature, Level}.

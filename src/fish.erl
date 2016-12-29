@@ -2,35 +2,35 @@
 
 -import(printer, [printFish/3]).
 
--export([startFish/1]).
+-export([startFish/2]).
 
 -define(NOT_HUNGRY, 1000).
 
 
 % Fish process
 
-startFish(FishType) ->
+startFish(FishType, PrinterPid) ->
   FishConstants = getFishConstants(FishType),
-  fishLoop(FishConstants, getFishStartingStats(FishConstants)).
+  fishLoop(FishConstants, getFishStartingStats(FishConstants), PrinterPid).
 
-fishLoop(FishConstants, {Hunger, Speed, AliveTime}) ->
+fishLoop(FishConstants, {Hunger, Speed, AliveTime}, PrinterPid) ->
   receive
     feed ->
-      fishLoop(FishConstants, {?NOT_HUNGRY, Speed, AliveTime});
+      fishLoop(FishConstants, {?NOT_HUNGRY, Speed, AliveTime}, PrinterPid);
     {refresh, Hour, Number, DispatcherPid} ->
       NewSpeed = calculateSpeed(FishConstants, Speed, Hour),
-      handleTimeStep(FishConstants, Hunger, NewSpeed, AliveTime, Number, DispatcherPid)
+      handleTimeStep(FishConstants, Hunger, NewSpeed, AliveTime, Number, DispatcherPid, PrinterPid)
   end.
 
-handleTimeStep(FishConstants, Hunger, Speed, AliveTime, Number, DispatcherPid) ->
-  printer:printFish(FishConstants, {Hunger, Speed, AliveTime}, Number),
+handleTimeStep(FishConstants, Hunger, Speed, AliveTime, Number, DispatcherPid, PrinterPid) ->
+  PrinterPid ! {printFish, FishConstants, {Hunger, Speed, AliveTime}, Number},
   NewHunger = changeHunger(Hunger, FishConstants),
   NewAliveTime = AliveTime + 1,
   Alive = isAlive(NewHunger, NewAliveTime, FishConstants),
   if
     Alive == true ->
       DispatcherPid ! {self(), ok},
-      fishLoop(FishConstants, {NewHunger, Speed, NewAliveTime});
+      fishLoop(FishConstants, {NewHunger, Speed, NewAliveTime}, PrinterPid);
     true ->
       DispatcherPid ! {self(), death}
   end.

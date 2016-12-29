@@ -3,8 +3,7 @@
 -import(listUtil, [listWithSameElements/2]).
 -import(screen, [clearScreen/0, clearXY/3, writeXY/3, moveCursor/2]).
 
--export([printBackground/0, printLastCommand/1, printTime/2,
-  readLine/0, printFish/3, clearFish/2, printAquariumState/1]).
+-export([startPrinter/0, readLine/0]).
 
 
 -define(TITLE_LINE, 1).
@@ -15,7 +14,7 @@
 
 -define(INPUT_LINE, 3).
 -define(INPUT_MAX_LEN, 20).
--define(INPUT_TEXT_START, 20).
+-define(INPUT_TEXT_START, 15).
 
 -define(LAST_COMMAND_LINE, 4).
 -define(LAST_COMMAND_LINE_MAX_LEN, 40).
@@ -26,18 +25,51 @@
 -define(AQUARIUM_STATE_LINE, 7).
 -define(AQUARIUM_STATE_MAX_LEN, 40).
 -define(FISH_FIRST_LINE, 8).
--define(FISH_MAX_LEN, 40).
+-define(FISH_MAX_LEN, 80).
 
+
+startPrinter() ->
+  printerLoop().
+
+printerLoop() ->
+  receive
+    printBackground ->
+      printBackground(),
+      printerLoop();
+    {printLastCommand, LastCommand} ->
+      printLastCommand(LastCommand),
+      printerLoop();
+    {printTime, Hours, Minutes} ->
+      printTime(Hours, Minutes),
+      printerLoop();
+    {printFish, FishConstants, FishVars, Number} ->
+      printFish(FishConstants, FishVars, Number),
+      printerLoop();
+    {clearFish, AliveFishAmount, LinesToClear} ->
+      clearFish(AliveFishAmount, LinesToClear),
+      printerLoop();
+    {printAquariumState, AquariumState} ->
+      printAquariumState(AquariumState),
+      printerLoop()
+  end.
+
+readLine() ->
+  screen:clearXY(?INDENT + ?INPUT_TEXT_START, ?INPUT_LINE, ?INPUT_MAX_LEN),
+  moveCursorToInputLine(),
+  string:strip(io:get_line(""), right, $\n).
 
 printBackground() ->
   screen:clearScreen(),
   screen:writeXY(?TITLE_INDENT, ?TITLE_LINE, "##### AQUARIUM #####"),
   screen:writeXY(?INDENT, ?POSSIBLE_COMMANDS_LINE,
-    "Possible commands: feed, newFish, heaterHigh, heaterNormal, heaterOff, end").
+    "Possible commands: feed, newFish, heaterHigh, heaterNormal, heaterOff, end"),
+  screen:writeXY(?INDENT, ?INPUT_LINE, "Enter command: "),
+  moveCursorToInputLine().
 
 printLastCommand(LastCommand) ->
   screen:clearXY(?INDENT, ?LAST_COMMAND_LINE, ?LAST_COMMAND_LINE_MAX_LEN),
-  screen:writeXY(?INDENT, ?LAST_COMMAND_LINE, "Last user command: " ++ LastCommand).
+  screen:writeXY(?INDENT, ?LAST_COMMAND_LINE, "Last user command: " ++ LastCommand),
+  moveCursorToInputLine().
 
 printTime(Hours, Minutes) ->
   screen:clearXY(?CLOCK_X, ?CLOCK_LINE, ?CLOCK_MAX_LEN),
@@ -52,13 +84,8 @@ to2Digits(Number) ->
       integer_to_list(Number)
   end.
 
-readLine() ->
-  screen:clearXY(?INDENT + ?INPUT_TEXT_START, ?INPUT_LINE, ?INPUT_MAX_LEN),
-  moveCursorToInputLine(),
-  string:strip(io:get_line("Message to produce: "), right, $\n).
-
 moveCursorToInputLine() ->
-  screen:moveCursor(?INDENT, ?INPUT_LINE).
+  screen:moveCursor(?INDENT + ?INPUT_TEXT_START, ?INPUT_LINE).
 
 printFish({FishType, LifeTime, _, _}, {Hunger, Speed, AliveTime}, Number) ->
   LineNumber = ?FISH_FIRST_LINE + Number,
@@ -76,8 +103,8 @@ clearFish(AliveFishAmount, LinesToClear) ->
   clearFish(AliveFishAmount, LinesToClear - 1).
 
 printAquariumState({Temperature, HeaterLevel}) ->
-  screen:clearXY(?INDENT, ?AQUARIUM_STATE_LINE, ?AQUARIUM_STATE_MAX_LEN),
   RoundedTemp = round(Temperature * 10) / 10,
+  screen:clearXY(?INDENT, ?AQUARIUM_STATE_LINE, ?AQUARIUM_STATE_MAX_LEN),
   screen:writeXY(?INDENT, ?AQUARIUM_STATE_LINE,
     io_lib:format("Temperature=~p C, heater level=~p", [RoundedTemp, HeaterLevel])),
   moveCursorToInputLine().
