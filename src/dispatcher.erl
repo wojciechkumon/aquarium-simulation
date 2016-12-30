@@ -1,6 +1,6 @@
 -module(dispatcher).
 
--import(aquariumState, [refreshAquariumState/2, clean/1]).
+-import(aquariumState, [refreshAquariumState/3, clean/1]).
 
 -export([startDispatcher/3]).
 
@@ -15,8 +15,8 @@ dispatcherLoop(FishProcesses, Minutes, AquariumState, PrinterPid) ->
     feed ->
       feed(FishProcesses),
       dispatcherLoop(FishProcesses, Minutes, AquariumState, PrinterPid);
-    newFish ->
-      NewFishProcesses = addNewFishToList(FishProcesses, PrinterPid),
+    {newFish, FishType} ->
+      NewFishProcesses = addNewFishToList(FishType, FishProcesses, PrinterPid),
       dispatcherLoop(NewFishProcesses, Minutes, AquariumState, PrinterPid);
     timeStep ->
       {FishLeft, NewMinutes, NewAquariumState} = timeStep(FishProcesses, Minutes, AquariumState, PrinterPid),
@@ -46,17 +46,28 @@ heal([FishPid | Tail]) ->
   FishPid ! heal,
   heal(Tail).
 
-addNewFishToList(FishProcesses, PrinterPid) ->
-  FishProcesses ++ [spawn(fish, startFish, [gupik, PrinterPid])].
+addNewFishToList(FishType, FishProcesses, PrinterPid) ->
+  FishProcesses ++ [spawn(fish, startFish, [FishType, PrinterPid])].
 
 timeStep(FishProcesses, Minutes, AquariumState, PrinterPid) ->
   NewMinutes = (Minutes + 1) rem 1440,
   printTime(NewMinutes, PrinterPid),
   FishLeft = refreshFish(NewMinutes, FishProcesses),
   clearDeadFishLines(FishProcesses, FishLeft, PrinterPid),
-  NewAquariumState = aquariumState:refreshAquariumState(AquariumState, length(FishLeft)),
+  NewAquariumState = aquariumState:refreshAquariumState(AquariumState, length(FishLeft), countAlgaeEaters(FishLeft)),
   PrinterPid ! {printAquariumState, NewAquariumState},
   {FishLeft, NewMinutes, NewAquariumState}.
+
+countAlgaeEaters(Fish) ->
+  countAlgaeEatersImpl(Fish, 0).
+
+countAlgaeEatersImpl([], N) -> N;
+countAlgaeEatersImpl([FishPid | Tail], N) ->
+  FishPid ! {askType, self()},
+  receive
+    algaeEater -> countAlgaeEatersImpl(Tail, N + 1);
+    _ -> countAlgaeEatersImpl(Tail, N)
+  end.
 
 printTime(MinutesSum, PrinterPid) ->
   Hours = MinutesSum div 60,

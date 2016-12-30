@@ -1,15 +1,15 @@
 -module(aquariumState).
 
--export([startingAquariumState/0, refreshAquariumState/2, clean/1]).
+-export([startingAquariumState/0, refreshAquariumState/3, clean/1]).
 
 % AquariumState = {{Temperature, HeaterLevel}, Dirt}
 % HeaterLevel = off|normal|high
 
 startingAquariumState() -> {{20.0, normal}, 0}.
 
-refreshAquariumState({TempTuple, Dirt}, FishAmount) ->
+refreshAquariumState({TempTuple, Dirt}, FishAmount, AlgaeEaters) ->
   NewTempTuple = refreshTemperature(TempTuple),
-  NewDirt = refreshDirt(Dirt, FishAmount),
+  NewDirt = refreshDirt(Dirt, FishAmount, AlgaeEaters),
   {NewTempTuple, NewDirt}.
 
 refreshTemperature({Temperature, off}) ->
@@ -44,13 +44,15 @@ refreshTemperature({Temperature, high}) ->
       {Temperature, high}
   end.
 
-
-refreshDirt(Dirt, FishAmount) ->
+refreshDirt(Dirt, FishAmount, AlgaeEaters) ->
+  DirtToAdd = (0.05 * (FishAmount - AlgaeEaters)),
+  DirtToRemove = 0.1 * AlgaeEaters,
+  RandomDirt = (rand:uniform(11) - 1) / 100,
+  NewDirt = Dirt + DirtToAdd - DirtToRemove + RandomDirt,
   if
-    Dirt < 100 ->
-      (0.05 * FishAmount) + Dirt;
-    Dirt >= 100 ->
-      100
+    NewDirt >= 100 -> 100;
+    NewDirt =< 0 -> 0;
+    true -> NewDirt
   end.
 
 clean({TempTuple, _}) ->

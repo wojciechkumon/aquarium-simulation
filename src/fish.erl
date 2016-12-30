@@ -4,7 +4,8 @@
 
 -export([startFish/2]).
 
--define(NOT_HUNGRY, 1000).
+-define(MAX_HUNGER, 1000).
+-define(NOT_HUNGRY, 0).
 
 
 % Fish process
@@ -22,7 +23,10 @@ fishLoop(FishConstants, {Hunger, Speed, AliveTime, Condition}, PrinterPid) ->
       handleTimeStep(FishConstants, Hunger, NewSpeed, AliveTime, Condition, Number, DispatcherPid, PrinterPid);
     heal ->
       NewCondition = tryToHeal(Condition),
-      fishLoop(FishConstants, {Hunger, Speed, AliveTime, NewCondition}, PrinterPid)
+      fishLoop(FishConstants, {Hunger, Speed, AliveTime, NewCondition}, PrinterPid);
+    {askType, CallerPid} ->
+      answerType(FishConstants, CallerPid),
+      fishLoop(FishConstants, {Hunger, Speed, AliveTime, Condition}, PrinterPid)
   end.
 
 handleTimeStep(FishConstants, Hunger, Speed, AliveTime, Condition, Number, DispatcherPid, PrinterPid) ->
@@ -49,21 +53,22 @@ printFish(PrinterPid, FishConstants, Hunger, Speed, AliveTime, {ill, _}, Number)
 % MaxLifeTime - in timeSteps
 % HungerSpeed - per timeStep
 getFishConstants(neon) -> {neon, 1440, 5, 10};
-getFishConstants(skalar) -> {skalar, 800, 3, 15};
-getFishConstants(gupik) -> {gupik, 900, 4, 7}.
+getFishConstants(danio) -> {danio, 800, 3, 15};
+getFishConstants(guppy) -> {guppy, 900, 4, 7};
+getFishConstants(algaeEater) -> {algaeEater, 2500, 1, 12}.
 
 % {Hunger, Speed, AliveTime, Healthy}
 getFishStartingStats({_, _, _, MaxSpeed}) ->
   {?NOT_HUNGRY, MaxSpeed / 4, 0, healthy}.
 
 changeHunger(Hunger, {_, _, HungerSpeed, _}) ->
-  Hunger - HungerSpeed.
+  Hunger + HungerSpeed.
 
 isAlive(NewHunger, NewAliveTime, healthy, {_, MaxLifeTime, _, _}) ->
-  (NewHunger >= 0) and (NewAliveTime < MaxLifeTime);
+  (NewHunger < ?MAX_HUNGER) and (NewAliveTime < MaxLifeTime);
 
 isAlive(NewHunger, NewAliveTime, {ill, DeathTimer}, {_, MaxLifeTime, _, _}) ->
-  (DeathTimer > 0) and (NewHunger >= 0) and (NewAliveTime < MaxLifeTime).
+  (DeathTimer > 0) and (NewHunger < ?MAX_HUNGER) and (NewAliveTime < MaxLifeTime).
 
 calculateSpeed({_, _, _, MaxSpeed}, CurrentSpeed, Hour) ->
   NewSpeed = round2ndPlace(CurrentSpeed + newDelta()),
@@ -119,3 +124,5 @@ nextStepCondition(healthy) ->
     true -> healthy
   end.
 
+answerType({FishType, _, _, _}, CallerPid) ->
+  CallerPid ! FishType.

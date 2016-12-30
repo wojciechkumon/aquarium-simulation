@@ -20,12 +20,13 @@
 -define(LAST_COMMAND_LINE_MAX_LEN, 40).
 -define(INDENT, 3).
 
--define(POSSIBLE_COMMANDS_LINE, 5).
--define(SECOND_POSSIBLE_COMMANDS_LINE, 6).
+-define(TYPES_OF_FISH_LINE, 5).
+-define(POSSIBLE_COMMANDS_LINE, 6).
+-define(SECOND_POSSIBLE_COMMANDS_LINE, 7).
 
--define(AQUARIUM_STATE_LINE, 8).
+-define(AQUARIUM_STATE_LINE, 9).
 -define(AQUARIUM_STATE_MAX_LEN, 60).
--define(FISH_FIRST_LINE, 9).
+-define(FISH_FIRST_LINE, 10).
 -define(FISH_MAX_LEN, 80).
 
 
@@ -62,6 +63,7 @@ readLine() ->
 printBackground() ->
   screen:clearScreen(),
   screen:writeXY(?TITLE_INDENT, ?TITLE_LINE, "##### AQUARIUM #####"),
+  screen:writeXY(?INDENT, ?TYPES_OF_FISH_LINE, "Types of fish to add: neon, guppy, danio, algaeEater"),
   screen:writeXY(?INDENT, ?POSSIBLE_COMMANDS_LINE,
     "Possible commands: feed, newFish, heaterHigh, heaterNormal, heaterOff"),
   screen:writeXY(?INDENT, ?SECOND_POSSIBLE_COMMANDS_LINE,

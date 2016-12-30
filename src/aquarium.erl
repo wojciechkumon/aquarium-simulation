@@ -12,7 +12,7 @@
 start() ->
   PrinterPid = spawn(printer, startPrinter, []),
   PrinterPid ! printBackground,
-  StartingFish = [neon, skalar],
+  StartingFish = [neon, danio],
   StartingAquariumState = aquariumState:startingAquariumState(),
   DispatcherPid = spawn(dispatcher, startDispatcher, [StartingFish, StartingAquariumState, PrinterPid]),
   {_, Timer} = time:startTime(DispatcherPid),
@@ -25,8 +25,17 @@ handleUserInput(DispatcherPid, PrinterPid, Timer) ->
     "feed" ->
       DispatcherPid ! feed,
       handleUserInput(DispatcherPid, PrinterPid, Timer);
-    "newFish" ->
-      DispatcherPid ! newFish,
+    "neon" ->
+      DispatcherPid ! {newFish, neon},
+      handleUserInput(DispatcherPid, PrinterPid, Timer);
+    "danio" ->
+      DispatcherPid ! {newFish, danio},
+      handleUserInput(DispatcherPid, PrinterPid, Timer);
+    "guppy" ->
+      DispatcherPid ! {newFish, guppy},
+      handleUserInput(DispatcherPid, PrinterPid, Timer);
+    "algaeEater" ->
+      DispatcherPid ! {newFish, algaeEater},
       handleUserInput(DispatcherPid, PrinterPid, Timer);
     "heaterHigh" ->
       DispatcherPid ! {heater, high},
