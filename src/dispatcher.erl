@@ -26,7 +26,10 @@ dispatcherLoop(FishProcesses, Minutes, AquariumState, PrinterPid) ->
       dispatcherLoop(FishProcesses, Minutes, NewAquariumState, PrinterPid);
     clean ->
       NewAquariumState = aquariumState:clean(AquariumState),
-      dispatcherLoop(FishProcesses, Minutes, NewAquariumState, PrinterPid)
+      dispatcherLoop(FishProcesses, Minutes, NewAquariumState, PrinterPid);
+    heal ->
+      heal(FishProcesses),
+      dispatcherLoop(FishProcesses, Minutes, AquariumState, PrinterPid)
   end.
 
 spawnFish([], _) -> [];
@@ -37,6 +40,11 @@ feed([]) -> ok;
 feed([FishPid | Tail]) ->
   FishPid ! feed,
   feed(Tail).
+
+heal([]) -> ok;
+heal([FishPid | Tail]) ->
+  FishPid ! heal,
+  heal(Tail).
 
 addNewFishToList(FishProcesses, PrinterPid) ->
   FishProcesses ++ [spawn(fish, startFish, [gupik, PrinterPid])].

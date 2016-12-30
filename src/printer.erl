@@ -21,10 +21,11 @@
 -define(INDENT, 3).
 
 -define(POSSIBLE_COMMANDS_LINE, 5).
+-define(SECOND_POSSIBLE_COMMANDS_LINE, 6).
 
--define(AQUARIUM_STATE_LINE, 7).
+-define(AQUARIUM_STATE_LINE, 8).
 -define(AQUARIUM_STATE_MAX_LEN, 60).
--define(FISH_FIRST_LINE, 8).
+-define(FISH_FIRST_LINE, 9).
 -define(FISH_MAX_LEN, 80).
 
 
@@ -62,7 +63,9 @@ printBackground() ->
   screen:clearScreen(),
   screen:writeXY(?TITLE_INDENT, ?TITLE_LINE, "##### AQUARIUM #####"),
   screen:writeXY(?INDENT, ?POSSIBLE_COMMANDS_LINE,
-    "Possible commands: feed, newFish, heaterHigh, heaterNormal, heaterOff, clean, end"),
+    "Possible commands: feed, newFish, heaterHigh, heaterNormal, heaterOff"),
+  screen:writeXY(?INDENT, ?SECOND_POSSIBLE_COMMANDS_LINE,
+    "heal, clean, end"),
   screen:writeXY(?INDENT, ?INPUT_LINE, "Enter command: "),
   moveCursorToInputLine().
 
@@ -87,15 +90,15 @@ to2Digits(Number) ->
 moveCursorToInputLine() ->
   screen:moveCursor(?INDENT + ?INPUT_TEXT_START, ?INPUT_LINE).
 
-printFish({FishType, LifeTime, _, _}, {Hunger, Speed, AliveTime}, Number) ->
+printFish({FishType, LifeTime, _, _}, {Hunger, Speed, AliveTime, Healthy}, Number) ->
   RoundedHunger = round(Hunger * 10) / 100,
   RoundedSpeed = round(Speed * 10) / 10,
-  RoundedLife = round((LifeTime - AliveTime)/60),
+  RoundedLife = round((LifeTime - AliveTime) / 60),
   LineNumber = ?FISH_FIRST_LINE + Number,
   screen:clearXY(?INDENT, LineNumber, ?FISH_MAX_LEN),
   screen:writeXY(?INDENT, LineNumber,
-    io_lib:format("<>< ~p, alive time left=~ph, Hunger=~p%, Speed=~p m/s",
-      [FishType, RoundedLife, RoundedHunger, RoundedSpeed])),
+    io_lib:format("<>< ~p, alive time left=~ph, Hunger=~p%, Speed=~p m/s ~p",
+      [FishType, RoundedLife, RoundedHunger, RoundedSpeed, Healthy])),
   moveCursorToInputLine().
 
 clearFish(_, 0) -> ok;
