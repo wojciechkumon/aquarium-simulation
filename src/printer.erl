@@ -65,7 +65,7 @@ printBackground() ->
   screen:writeXY(?TITLE_INDENT, ?TITLE_LINE, "##### AQUARIUM #####"),
   screen:writeXY(?INDENT, ?TYPES_OF_FISH_LINE, "Types of fish to add: neon, guppy, danio, algaeEater"),
   screen:writeXY(?INDENT, ?POSSIBLE_COMMANDS_LINE,
-    "Possible commands: feed, newFish, heaterHigh, heaterNormal, heaterOff"),
+    "Possible commands: feed, heaterHigh, heaterNormal, heaterOff"),
   screen:writeXY(?INDENT, ?SECOND_POSSIBLE_COMMANDS_LINE,
     "heal, clean, end"),
   screen:writeXY(?INDENT, ?INPUT_LINE, "Enter command: "),
