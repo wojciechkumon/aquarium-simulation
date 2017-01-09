@@ -89,4 +89,4 @@ clearDeadFishLines(FishProcesses, FishLeft, PrinterPid) ->
   DeadFishAmount = length(FishProcesses) - length(FishLeft),
   PrinterPid ! {clearFish, length(FishLeft), DeadFishAmount}.
 
-switchHeater({Temperature, _}, Level) -> {Temperature, Level}.
+switchHeater({{Temperature, _}, Dirt}, Level) -> {{Temperature, Level}, Dirt}.

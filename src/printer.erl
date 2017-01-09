@@ -1,7 +1,7 @@
 -module(printer).
 
 -import(listUtil, [listWithSameElements/2]).
--import(screen, [clearScreen/0, clearXY/3, writeXY/3, moveCursor/2]).
+-import(screen, [clearScreen/0, clearXY/3, writeXY/3, writeXY/4, moveCursor/2]).
 
 -export([startPrinter/0, readLine/0]).
 
@@ -100,8 +100,11 @@ printFish({FishType, LifeTime, _, _}, {Hunger, Speed, AliveTime, Healthy}, Numbe
   screen:clearXY(?INDENT, LineNumber, ?FISH_MAX_LEN),
   screen:writeXY(?INDENT, LineNumber,
     io_lib:format("<>< ~p, alive time left=~ph, Hunger=~p%, Speed=~p m/s ~p",
-      [FishType, RoundedLife, RoundedHunger, RoundedSpeed, Healthy])),
+      [FishType, RoundedLife, RoundedHunger, RoundedSpeed, Healthy]), bright),
   moveCursorToInputLine().
+
+%% TODO kolor glodu/choroby/zycia na czerwono czasem
+%% klient do połączenia z akwarium i zdalnego zarządzania
 
 clearFish(_, 0) -> ok;
 clearFish(AliveFishAmount, LinesToClear) ->
