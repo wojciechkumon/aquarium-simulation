@@ -6,6 +6,7 @@
 -define(TITLE_LINE, 1).
 -define(TITLE_INDENT, 10).
 -define(CLOCK_LINE, 1).
+-define(INFO_LINE, 2).
 -define(CLOCK_X, 34).
 -define(CLOCK_MAX_LEN, 5).
 
@@ -49,6 +50,9 @@ printerLoop() ->
       printerLoop();
     {printAquariumState, AquariumState} ->
       printAquariumState(AquariumState),
+      printerLoop();
+    {printInfo, Message} ->
+      printInfo(Message),
       printerLoop()
   end.
 
@@ -116,4 +120,9 @@ printAquariumState({{Temperature, HeaterLevel}, Dirt}) ->
   screen:clearXY(?INDENT, ?AQUARIUM_STATE_LINE, ?AQUARIUM_STATE_MAX_LEN),
   screen:writeXY(?INDENT, ?AQUARIUM_STATE_LINE,
     io_lib:format("Temperature=~p C, heater level=~p, Dirt=~p%", [RoundedTemp, HeaterLevel, RoundedDirt])),
+  moveCursorToInputLine().
+
+printInfo(Message) ->
+  screen:clearXY(?INDENT, ?INFO_LINE, ?AQUARIUM_STATE_MAX_LEN),
+  screen:writeXY(?INDENT, ?INFO_LINE, Message),
   moveCursorToInputLine().

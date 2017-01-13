@@ -11,44 +11,53 @@ start() ->
   StartingAquariumState = aquariumState:startingAquariumState(),
   DispatcherPid = spawn(dispatcher, startDispatcher, [StartingFish, StartingAquariumState, PrinterPid]),
   {_, Timer} = time:startTime(DispatcherPid),
-  handleUserInput(DispatcherPid, PrinterPid, Timer).
+  Server = spawn(aquariumServer, startServer, [PrinterPid]),
+  handleUserInput(DispatcherPid, PrinterPid, {Timer, Server}).
 
-handleUserInput(DispatcherPid, PrinterPid, Timer) ->
+handleUserInput(DispatcherPid, PrinterPid, ToClose) ->
   Input = printer:readLine(),
   PrinterPid ! {printLastCommand, Input},
   case Input of
     "feed" ->
       DispatcherPid ! feed,
-      handleUserInput(DispatcherPid, PrinterPid, Timer);
+      handleUserInput(DispatcherPid, PrinterPid, ToClose);
     "neon" ->
       DispatcherPid ! {newFish, neon},
-      handleUserInput(DispatcherPid, PrinterPid, Timer);
+      handleUserInput(DispatcherPid, PrinterPid, ToClose);
     "danio" ->
       DispatcherPid ! {newFish, danio},
-      handleUserInput(DispatcherPid, PrinterPid, Timer);
+      handleUserInput(DispatcherPid, PrinterPid, ToClose);
     "guppy" ->
       DispatcherPid ! {newFish, guppy},
-      handleUserInput(DispatcherPid, PrinterPid, Timer);
+      handleUserInput(DispatcherPid, PrinterPid, ToClose);
     "algaeEater" ->
       DispatcherPid ! {newFish, algaeEater},
-      handleUserInput(DispatcherPid, PrinterPid, Timer);
+      handleUserInput(DispatcherPid, PrinterPid, ToClose);
     "heaterHigh" ->
       DispatcherPid ! {heater, high},
-      handleUserInput(DispatcherPid, PrinterPid, Timer);
+      handleUserInput(DispatcherPid, PrinterPid, ToClose);
     "heaterNormal" ->
       DispatcherPid ! {heater, normal},
-      handleUserInput(DispatcherPid, PrinterPid, Timer);
+      handleUserInput(DispatcherPid, PrinterPid, ToClose);
     "heaterOff" ->
       DispatcherPid ! {heater, off},
-      handleUserInput(DispatcherPid, PrinterPid, Timer);
+      handleUserInput(DispatcherPid, PrinterPid, ToClose);
     "clean" ->
       DispatcherPid ! clean,
-      handleUserInput(DispatcherPid, PrinterPid, Timer);
+      handleUserInput(DispatcherPid, PrinterPid, ToClose);
     "heal" ->
       DispatcherPid ! heal,
-      handleUserInput(DispatcherPid, PrinterPid, Timer);
+      handleUserInput(DispatcherPid, PrinterPid, ToClose);
     "end" ->
-      timer:cancel(Timer),
-      screen:clearScreen();
-    _ -> handleUserInput(DispatcherPid, PrinterPid, Timer)
+      cleanUp(ToClose);
+    _ -> handleUserInput(DispatcherPid, PrinterPid, ToClose)
   end.
+
+
+cleanUp({Timer, Server}) ->
+  timer:cancel(Timer),
+  Server ! {close, self()},
+  receive
+    closed -> ok
+  end,
+  screen:clearScreen().
