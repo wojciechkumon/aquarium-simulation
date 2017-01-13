@@ -1,7 +1,5 @@
 -module(dispatcher).
 
--import(aquariumState, [refreshAquariumState/3, clean/1]).
-
 -export([startDispatcher/3]).
 
 % Dispatcher process

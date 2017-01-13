@@ -1,7 +1,5 @@
 -module(screen).
 
--import(listUtil, [listWithSameElements/2]).
-
 -export([clearScreen/0, writeXY/3, writeXY/4, escapeXY/2, clearXY/3, moveCursor/2]).
 
 

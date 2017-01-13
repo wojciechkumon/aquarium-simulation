@@ -1,10 +1,5 @@
 -module(aquarium).
 
--import(time, [startTime/1]).
--import(printer, [readLine/0]).
--import(screen, [clearScreen/0]).
--import(aquariumState, [startingAquariumState/0]).
-
 -export([start/0]).
 
 % Main process

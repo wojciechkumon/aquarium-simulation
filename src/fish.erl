@@ -1,7 +1,5 @@
 -module(fish).
 
--import(printer, [printFish/3]).
-
 -export([startFish/2]).
 
 -define(MAX_HUNGER, 1000).

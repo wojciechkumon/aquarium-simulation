@@ -1,8 +1,5 @@
 -module(printer).
 
--import(listUtil, [listWithSameElements/2]).
--import(screen, [clearScreen/0, clearXY/3, writeXY/3, writeXY/4, moveCursor/2]).
-
 -export([startPrinter/0, readLine/0]).
 
 
