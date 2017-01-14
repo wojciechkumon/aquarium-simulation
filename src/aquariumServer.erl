@@ -8,28 +8,35 @@ defaultHost() -> "localhost".
 defaultPort() -> 11111.
 tcpOptions() -> [{active, false}, {packet, 2}].
 
-startServer(PrinterPid) ->
-  startServer(PrinterPid, defaultPort()).
+startServer(Pids) ->
+  startServer(Pids, defaultPort()).
 
-startServer(PrinterPid, Port) ->
+startServer({PrinterPid, DispatcherPid}, Port) ->
   case gen_tcp:listen(Port, tcpOptions()) of
-    {ok, ServerSocket} -> waitForConnection(ServerSocket, PrinterPid);
-    {error, Error} -> PrinterPid ! {printInfo, io_lib:format("Server error (~p)", [Error])}
+    {ok, ServerSocket} -> waitForConnection(ServerSocket, {PrinterPid, DispatcherPid});
+    {error, Error} ->
+      PrinterPid ! {printInfo, io_lib:format("Server error (~p)", [Error])},
+      waitForClose()
   end.
 
-waitForConnection(ServerSocket, PrinterPid) ->
+waitForClose() ->
+  receive
+    {close, Pid} -> Pid ! closed
+  end.
+
+waitForConnection(ServerSocket, {PrinterPid, DispatcherPid}) ->
   case gen_tcp:accept(ServerSocket, ?TIMEOUT) of
     {ok, Socket} ->
       PrinterPid ! {printInfo, "new connection"},
-      spawn(fun() -> handleSocket(Socket, PrinterPid) end),
-      closeOrContinue(ServerSocket, PrinterPid);
+      spawn(fun() -> handleSocket(Socket, {PrinterPid, DispatcherPid}) end),
+      closeOrContinue(ServerSocket, {PrinterPid, DispatcherPid});
     {error, timeout} ->
-      closeOrContinue(ServerSocket, PrinterPid);
+      closeOrContinue(ServerSocket, {PrinterPid, DispatcherPid});
     {error, Error} ->
       PrinterPid ! {printInfo, io_lib:format("Connection accept error (~p)~n", [Error])}
   end.
 
-closeOrContinue(ServerSocket, PrinterPid) ->
+closeOrContinue(ServerSocket, {PrinterPid, DispatcherPid}) ->
   receive
     {close, Pid} ->
       ShouldClose = true,
@@ -41,10 +48,10 @@ closeOrContinue(ServerSocket, PrinterPid) ->
   if
     ShouldClose == true ->
       ok;
-    true -> waitForConnection(ServerSocket, PrinterPid)
+    true -> waitForConnection(ServerSocket, {PrinterPid, DispatcherPid})
   end.
 
-handleSocket(Socket, PrinterPid) ->
+handleSocket(Socket, {PrinterPid, DispatcherPid}) ->
   case gen_tcp:recv(Socket, 0) of
     {ok, "closeConnection"} ->
       gen_tcp:send(Socket, "closing"),
@@ -52,9 +59,17 @@ handleSocket(Socket, PrinterPid) ->
       ok;
     {ok, "checkAquariumState"} ->
       PrinterPid ! {printInfo, io_lib:format("Input ~p~n", ["checkAquariumState"])},
-      gen_tcp:send(Socket, "superAquariumState, 10 fish!"),
-      handleSocket(Socket, PrinterPid);
+      CurrentAquariumStateString = getCurrentAquariumState(DispatcherPid),
+      gen_tcp:send(Socket, CurrentAquariumStateString),
+      handleSocket(Socket, {PrinterPid, DispatcherPid});
     {error, Error} ->
       PrinterPid ! {printInfo, io_lib:format("Connection error (~p)", [Error])},
       ok
+  end.
+
+getCurrentAquariumState(DispatcherPid) ->
+  DispatcherPid ! {currentAquarium, self()},
+  receive
+    {currentAquarium, CurrentAquarium} ->
+      stringConverter:toString(CurrentAquarium)
   end.

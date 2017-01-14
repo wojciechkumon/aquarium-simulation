@@ -24,6 +24,9 @@ fishLoop(FishConstants, {Hunger, Speed, AliveTime, Condition}, PrinterPid) ->
       fishLoop(FishConstants, {Hunger, Speed, AliveTime, NewCondition}, PrinterPid);
     {askType, CallerPid} ->
       answerType(FishConstants, CallerPid),
+      fishLoop(FishConstants, {Hunger, Speed, AliveTime, Condition}, PrinterPid);
+    {getFullState, CallerPid} ->
+      answerFullState({FishConstants, {Hunger, Speed, AliveTime, Condition}}, CallerPid),
       fishLoop(FishConstants, {Hunger, Speed, AliveTime, Condition}, PrinterPid)
   end.
 
@@ -124,3 +127,6 @@ nextStepCondition(healthy) ->
 
 answerType({FishType, _, _, _}, CallerPid) ->
   CallerPid ! FishType.
+
+answerFullState(FishState, CallerPid) ->
+  CallerPid ! {fishFullState, FishState}.

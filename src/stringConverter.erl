@@ -6,7 +6,7 @@
 %% Fish = [SingleFish,...]
 %% SingleFish = {{FishType, MaxLifeTime, HungerSpeed, MaxSpeed}, {Hunger, Speed, AliveTime, Healthy}}
 
-%% example: {{{21.35322534525,heaterOff},52.32423521},[{{neon, 1000, 15, 10}, {214.24, 21.34, 100, ill}},{{guppy, 1200, 25, 20}, {414.74, 13.12, 220, healthy}}]}
+%% example using toString: {{{21.35322534525,heaterOff},52},[{{neon, 1000, 15, 10}, {214, 21.34, 100, {ill, 20}}},{{guppy, 1200, 25, 20}, {420, 13.12, 220, healthy}}]}
 
 toString({AquariumState, Fish}) ->
   aquariumStateToString(AquariumState) ++ "|" ++ fishToString(Fish).
@@ -14,11 +14,21 @@ toString({AquariumState, Fish}) ->
 aquariumStateToString({{Temperature, HeaterLevel}, Dirt}) ->
   floatToString(Temperature) ++ "$" ++ atom_to_list(HeaterLevel) ++ "#" ++ floatToString(Dirt).
 
+fishToString([]) -> "";
+
 fishToString([{{FishType, MaxLifeTime, HungerSpeed, MaxSpeed}, {Hunger, Speed, AliveTime, Healthy}}]) ->
+  if
+    Healthy == healthy ->
+      HealthyString = "healthy";
+    true ->
+      {ill, DeathTimer} = Healthy,
+      HealthyString = "ill^" ++ intToString(DeathTimer)
+  end,
+
   atom_to_list(FishType) ++ "&" ++ intToString(MaxLifeTime) ++ "&" ++ intToString(HungerSpeed)
     ++ "&" ++ intToString(MaxSpeed)
     ++ "@" ++ floatToString(Hunger) ++ "&" ++ floatToString(Speed) ++ "&"
-    ++ intToString(AliveTime) ++ "&" ++ atom_to_list(Healthy);
+    ++ intToString(AliveTime) ++ "&" ++ HealthyString;
 
 fishToString([X | Tail]) ->
   fishToString([X]) ++ "*" ++ fishToString(Tail).
@@ -40,7 +50,7 @@ fromAquariumStateString(AquariumStateString) ->
   [Temperature | HeaterLevel] = TempHeaterLevelList,
   {TemperatureNumber, _} = string:to_float(Temperature),
   HeaterLevelAtom = list_to_atom(lists:flatten(HeaterLevel)),
-  {DirtNumber, _} = string:to_float(lists:flatten(Dirt)),
+  {DirtNumber, _} = string:to_integer(lists:flatten(Dirt)),
   {{TemperatureNumber, HeaterLevelAtom}, DirtNumber}.
 
 fromFishListString(FishString) ->
@@ -55,10 +65,18 @@ fromSingleFishString(FishString) ->
   {MaxLifeTime, _} = string:to_integer(MaxLifeTimeString),
   {HungerSpeed, _} = string:to_integer(HungerSpeedString),
   {MaxSpeed, _} = string:to_integer(lists:flatten(MaxSpeedString)),
-  {Hunger, _} = string:to_float(HungerString),
+  {Hunger, _} = string:to_integer(HungerString),
   {Speed, _} = string:to_float(SpeedString),
   {AliveTime, _} = string:to_integer(AliveTimeString),
-  Healthy = list_to_atom(lists:flatten(HealthyString)),
+  FlattenHealthy = lists:flatten(HealthyString),
+  if
+    FlattenHealthy == "healthy" ->
+      Healthy = healthy;
+    true ->
+      [Ill, DeathTimerString] = string:tokens(FlattenHealthy, "^"),
+      {DeathTimer, _} = string:to_integer(DeathTimerString),
+      Healthy = {list_to_atom(Ill), DeathTimer}
+  end,
   {{FishType, MaxLifeTime, HungerSpeed, MaxSpeed}, {Hunger, Speed, AliveTime, Healthy}}.
 
 floatToString(Float) ->

@@ -11,7 +11,7 @@ start() ->
   StartingAquariumState = aquariumState:startingAquariumState(),
   DispatcherPid = spawn(dispatcher, startDispatcher, [StartingFish, StartingAquariumState, PrinterPid]),
   Timer = time:startTime(DispatcherPid),
-  Server = spawn(aquariumServer, startServer, [PrinterPid]),
+  Server = spawn(aquariumServer, startServer, [{PrinterPid, DispatcherPid}]),
   handleUserInput(DispatcherPid, PrinterPid, {Timer, Server}).
 
 handleUserInput(DispatcherPid, PrinterPid, ToClose) ->
@@ -49,15 +49,15 @@ handleUserInput(DispatcherPid, PrinterPid, ToClose) ->
       DispatcherPid ! heal,
       handleUserInput(DispatcherPid, PrinterPid, ToClose);
     "end" ->
-      cleanUp(ToClose);
+      cleanUp(ToClose, PrinterPid);
     _ -> handleUserInput(DispatcherPid, PrinterPid, ToClose)
   end.
 
 
-cleanUp({Timer, Server}) ->
+cleanUp({Timer, Server}, PrinterPid) ->
   timer:cancel(Timer),
   Server ! {close, self()},
   receive
     closed -> ok
   end,
-  screen:clearScreen().
+  PrinterPid ! clearScreen.

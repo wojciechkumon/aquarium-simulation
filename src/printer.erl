@@ -35,12 +35,6 @@ startPrinter() ->
 
 printerLoop() ->
   receive
-    printBackground ->
-      printBackground(),
-      printerLoop();
-    {printLastCommand, LastCommand} ->
-      printLastCommand(LastCommand),
-      printerLoop();
     {printTime, Hours, Minutes} ->
       printTime(Hours, Minutes),
       printerLoop();
@@ -55,6 +49,18 @@ printerLoop() ->
       printerLoop();
     {printInfo, Message} ->
       printInfo(Message),
+      printerLoop();
+    {printLastCommand, LastCommand} ->
+      printLastCommand(LastCommand),
+      printerLoop();
+    clearScreen ->
+      screen:clearScreen(),
+      printerLoop();
+    printBackground ->
+      printBackground(),
+      printerLoop();
+    printClientBackground ->
+      printClientBackground(),
       printerLoop()
   end.
 
@@ -133,9 +139,6 @@ printFish({FishType, LifeTime, _, _}, {Hunger, Speed, AliveTime, Healthy}, Numbe
   end,
   moveCursorToInputLine().
 
-%% TODO kolor glodu/choroby/zycia na czerwono czasem
-%% klient do połączenia z akwarium i zdalnego zarządzania
-
 clearFish(_, 0) -> ok;
 clearFish(AliveFishAmount, LinesToClear) ->
   LineNumber = ?FISH_FIRST_LINE + AliveFishAmount + LinesToClear - 1,
@@ -179,4 +182,12 @@ printAquariumState({{Temperature, HeaterLevel}, Dirt}) ->
 printInfo(Message) ->
   screen:clearXY(?INDENT, ?INFO_LINE, ?AQUARIUM_STATE_MAX_LEN),
   screen:writeXY(?INDENT, ?INFO_LINE, Message),
+  moveCursorToInputLine().
+
+printClientBackground() ->
+  screen:clearScreen(),
+  screen:writeXY(?TITLE_INDENT, ?TITLE_LINE, "##### AQUARIUM CLIENT #####", lightblue),
+  screen:writeXY(?INDENT, ?POSSIBLE_COMMANDS_LINE,
+    "Possible commands: end"),
+  screen:writeXY(?INDENT, ?INPUT_LINE, "Enter command: "),
   moveCursorToInputLine().
