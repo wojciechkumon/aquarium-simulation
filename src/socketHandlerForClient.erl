@@ -9,7 +9,7 @@ handleSocket(Socket) ->
     {checkAquariumState, Pid} ->
       io:format("[SocketHandler] checkAquariumState~n"),
       Response = sendRequest(Socket, "checkAquariumState"),
-      Pid ! Response,
+      Pid ! {response, Response},
       handleSocket(Socket);
     {closeConnection, Pid} ->
       io:format("[SocketHandler] closeConnection~n"),

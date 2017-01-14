@@ -11,7 +11,7 @@ start() ->
   StartingAquariumState = aquariumState:startingAquariumState(),
   DispatcherPid = spawn(dispatcher, startDispatcher, [StartingFish, StartingAquariumState, PrinterPid]),
   Timer = time:startTime(DispatcherPid),
-  Server = spawn(aquariumServer, startServer, [PrinterPid]),
+  Server = spawn(aquariumServer, startServer, [{PrinterPid, DispatcherPid}]),
   handleUserInput(DispatcherPid, PrinterPid, {Timer, Server}).
 
 handleUserInput(DispatcherPid, PrinterPid, ToClose) ->

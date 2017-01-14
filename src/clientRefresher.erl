@@ -5,7 +5,7 @@
 %% Aquarium state refresher in client
 
 startAquariumRefresher(SocketHandler) ->
-  Timer = time:startTime(self(), 150),
+  Timer = time:startTime(self(), 1500),
   refresherLoop(SocketHandler, Timer).
 
 refresherLoop(SocketHandler, Timer) ->
@@ -25,7 +25,7 @@ handleRefresh(SocketHandler, Timer) ->
       closeRefresher(Timer);
     error ->
       closeRefresher(Timer);
-    Response ->
+    {response, Response} ->
       io:format("Aquarium refresher response: ~p~n", [Response])
   end.
 

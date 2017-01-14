@@ -10,15 +10,19 @@ startDispatcher(StartingFish, StartingAquariumState, PrinterPid) ->
 
 dispatcherLoop(FishProcesses, Minutes, AquariumState, PrinterPid) ->
   receive
+    timeStep ->
+      {FishLeft, NewMinutes, NewAquariumState} = timeStep(FishProcesses, Minutes, AquariumState, PrinterPid),
+      dispatcherLoop(FishLeft, NewMinutes, NewAquariumState, PrinterPid);
+    {currentAquarium, Pid} ->
+      FishStates = getFishStates(FishProcesses),
+      Pid ! {currentAquarium, {AquariumState, FishStates}},
+      dispatcherLoop(FishProcesses, Minutes, AquariumState, PrinterPid);
     feed ->
       feed(FishProcesses),
       dispatcherLoop(FishProcesses, Minutes, AquariumState, PrinterPid);
     {newFish, FishType} ->
       NewFishProcesses = addNewFishToList(FishType, FishProcesses, PrinterPid),
       dispatcherLoop(NewFishProcesses, Minutes, AquariumState, PrinterPid);
-    timeStep ->
-      {FishLeft, NewMinutes, NewAquariumState} = timeStep(FishProcesses, Minutes, AquariumState, PrinterPid),
-      dispatcherLoop(FishLeft, NewMinutes, NewAquariumState, PrinterPid);
     {heater, Level} ->
       NewAquariumState = switchHeater(AquariumState, Level),
       dispatcherLoop(FishProcesses, Minutes, NewAquariumState, PrinterPid);
@@ -88,3 +92,14 @@ clearDeadFishLines(FishProcesses, FishLeft, PrinterPid) ->
   PrinterPid ! {clearFish, length(FishLeft), DeadFishAmount}.
 
 switchHeater({{Temperature, _}, Dirt}, Level) -> {{Temperature, Level}, Dirt}.
+
+getFishStates([]) -> [];
+
+getFishStates([Fish | Tail]) ->
+  [getSingleFishState(Fish)] ++ getFishStates(Tail).
+
+getSingleFishState(Fish) ->
+  Fish ! {getFullState, self()},
+  receive
+    {fishFullState, FishState} -> FishState
+  end.

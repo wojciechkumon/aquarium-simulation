@@ -28,16 +28,21 @@ switchModeString(algaeEaterColor) -> "\e[48;5;64m";
 switchModeString(danioColor) -> "\e[48;5;205m".
 
 escapeXY(X, Y) ->
+%%  ok.
   "\e[" ++ integer_to_list(Y) ++ ";" ++ integer_to_list(X) ++ "H".
 
 writeXY(X, Y, Message) ->
+%%  ok.
   writeXY(X, Y, Message, normal).
 
 writeXY(X, Y, Message, Type) ->
+%%  ok.
   io:format(switchModeString(Type) ++ escapeXY(X, Y) ++ Message ++ switchModeString(normal)).
 
 clearXY(X, Y, Length) ->
+%%  ok.
   writeXY(X, Y, listWithSameElements(" ", Length)).
 
 moveCursor(X, Y) ->
+%%  ok.
   io:format(escapeXY(X, Y)).
