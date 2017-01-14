@@ -96,10 +96,11 @@ switchHeater({{Temperature, _}, Dirt}, Level) -> {{Temperature, Level}, Dirt}.
 getFishStates([]) -> [];
 
 getFishStates([Fish | Tail]) ->
-  [getSingleFishState(Fish)] ++ getFishStates(Tail).
+  getSingleFishState(Fish) ++ getFishStates(Tail).
 
 getSingleFishState(Fish) ->
   Fish ! {getFullState, self()},
   receive
-    {fishFullState, FishState} -> FishState
+    {fishFullState, FishState} -> [FishState]
+  after 500 -> []
   end.

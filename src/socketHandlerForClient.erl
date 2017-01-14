@@ -1,41 +1,37 @@
 -module(socketHandlerForClient).
 
--export([handleSocket/1]).
+-export([handleSocket/2]).
 
 %% Socket handler used in client
 
-handleSocket(Socket) ->
+handleSocket(Socket, PrinterPid) ->
   receive
     {checkAquariumState, Pid} ->
-      io:format("[SocketHandler] checkAquariumState~n"),
-      Response = sendRequest(Socket, "checkAquariumState"),
+      Response = sendRequest(Socket, PrinterPid, "checkAquariumState"),
       Pid ! {response, Response},
-      handleSocket(Socket);
+      handleSocket(Socket, PrinterPid);
     {closeConnection, Pid} ->
-      io:format("[SocketHandler] closeConnection~n"),
-      sendRequest(Socket, "closeConnection"),
+      sendRequest(Socket, PrinterPid, "closeConnection"),
       Pid ! closed
   end.
 
-sendRequest(Socket, Message) ->
+sendRequest(Socket, PrinterPid, Message) ->
   case gen_tcp:send(Socket, [Message]) of
     {error, timeout} ->
-      io:format("Send timeout, closing!~n", []),
+      PrinterPid ! {printInfo, "Send timeout, closing!"},
       gen_tcp:close(Socket);
-    {error, OtherSendError} ->
-      io:format("Some other error on socket (~p), closing~n", [OtherSendError]),
+    {error, _} ->
       gen_tcp:close(Socket),
       connectionClosed;
     ok ->
-      receiveResponse(Socket)
+      receiveResponse(Socket, PrinterPid)
   end.
 
-receiveResponse(Socket) ->
+receiveResponse(Socket, PrinterPid) ->
   case gen_tcp:recv(Socket, 0) of
     {ok, Data} ->
-      io:format("Input ~p~n", [Data]),
       Data;
     {error, closed} ->
-      io:format("Connection closed, err~n"),
+      PrinterPid ! {printInfo, "Connection closed"},
       error
   end.

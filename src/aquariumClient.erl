@@ -13,39 +13,39 @@ start(Port) ->
   start(aquariumServer:defaultHost(), Port).
 
 start(Host, Port) ->
-  Socket = connectWithServer(Host, Port),
+  PrinterPid = spawn(printer, startPrinter, []),
+  PrinterPid ! printClientBackground,
+  Socket = connectWithServer(Host, Port, PrinterPid),
   if
     Socket /= error ->
-      io:format("Connected"),
-      SocketHandler = spawn(socketHandlerForClient, handleSocket, [Socket]),
-      Refresher = spawn(clientRefresher, startAquariumRefresher, [SocketHandler]),
-      handleInput(SocketHandler, Refresher);
+      SocketHandler = spawn(socketHandlerForClient, handleSocket, [Socket, PrinterPid]),
+      Refresher = spawn(clientRefresher, startAquariumRefresher, [SocketHandler, PrinterPid]),
+      handleInput(SocketHandler, Refresher, PrinterPid);
     true -> ok
   end.
 
-connectWithServer(Host, Port) ->
+connectWithServer(Host, Port, PrinterPid) ->
   case gen_tcp:connect(Host, Port, aquariumServer:tcpOptions()) of
     {ok, Socket} ->
       Socket;
     {error, Error} ->
-      io:format("Error while connecting with server (~p)~n", [Error]),
+      PrinterPid ! clearScreen,
+      Message = io_lib:format("Error while connecting with server (~p)", [Error]),
+      PrinterPid ! {printInfo, Message},
       error
   end.
 
-handleInput(SocketHandler, Refresher) ->
-  Input = readLine(),
+handleInput(SocketHandler, Refresher, PrinterPid) ->
+  Input = printer:readLine(),
   if
     Input == "end" ->
-      handleEnd(SocketHandler, Refresher);
+      handleEnd(SocketHandler, Refresher, PrinterPid);
     true ->
-      io:format("wrong command!~n"),
-      handleInput(SocketHandler, Refresher)
+      PrinterPid ! {printInfo, "wrong command!"},
+      handleInput(SocketHandler, Refresher, PrinterPid)
   end.
 
-readLine() ->
-  string:strip(io:get_line(""), right, $\n).
-
-handleEnd(SocketHandler, Refresher) ->
+handleEnd(SocketHandler, Refresher, PrinterPid) ->
   Refresher ! {stop, self()},
   receive
     stopped -> ok
@@ -53,4 +53,5 @@ handleEnd(SocketHandler, Refresher) ->
   SocketHandler ! {closeConnection, self()},
   receive
     closed -> ok
-  end.
+  end,
+  PrinterPid ! clearScreen.
