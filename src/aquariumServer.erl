@@ -2,6 +2,7 @@
 
 -export([startServer/1, startServer/2, defaultHost/0, defaultPort/0, tcpOptions/0]).
 
+-define(INFO_LINE_TIMEOUT, 2000).
 -define(TIMEOUT, 100).
 
 defaultHost() -> "localhost".
@@ -28,6 +29,7 @@ waitForConnection(ServerSocket, {PrinterPid, DispatcherPid}) ->
   case gen_tcp:accept(ServerSocket, ?TIMEOUT) of
     {ok, Socket} ->
       PrinterPid ! {printInfo, "new connection"},
+      timer:send_after(?INFO_LINE_TIMEOUT, PrinterPid, clearInfoLine),
       spawn(fun() -> handleSocket(Socket, {PrinterPid, DispatcherPid}) end),
       closeOrContinue(ServerSocket, {PrinterPid, DispatcherPid});
     {error, timeout} ->
@@ -58,7 +60,6 @@ handleSocket(Socket, {PrinterPid, DispatcherPid}) ->
       gen_tcp:close(Socket),
       ok;
     {ok, "checkAquariumState"} ->
-      PrinterPid ! {printInfo, io_lib:format("Input ~p~n", ["checkAquariumState"])},
       CurrentAquariumStateString = getCurrentAquariumState(DispatcherPid),
       gen_tcp:send(Socket, CurrentAquariumStateString),
       handleSocket(Socket, {PrinterPid, DispatcherPid});

@@ -51,4 +51,10 @@ printFish(PrinterPid, [Fish | Tail], Number) ->
   printFish(PrinterPid, Tail, Number + 1).
 
 printSingleFish(PrinterPid, {FishConstants, FishVars}, Number) ->
-  PrinterPid ! {printFish, FishConstants, FishVars, Number}.
+  PrinterPid ! {printFish, FishConstants, setCorrectHealthyOrIll(FishVars), Number}.
+
+setCorrectHealthyOrIll({Hunger, Speed, AliveTime, healthy}) ->
+  {Hunger, Speed, AliveTime, healthy};
+
+setCorrectHealthyOrIll({Hunger, Speed, AliveTime, {ill, _}}) ->
+  {Hunger, Speed, AliveTime, ill}.

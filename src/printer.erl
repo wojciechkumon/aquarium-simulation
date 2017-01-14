@@ -53,6 +53,9 @@ printerLoop() ->
     {printLastCommand, LastCommand} ->
       printLastCommand(LastCommand),
       printerLoop();
+    clearInfoLine ->
+      clearInfoLine(),
+      printerLoop();
     clearScreen ->
       screen:clearScreen(),
       printerLoop();
@@ -76,7 +79,7 @@ printBackground() ->
   screen:writeXY(?INDENT + 21, ?TYPES_OF_FISH_LINE, " neon, guppy, danio, algaeEater        ", lightgrey),
   screen:writeXY(?INDENT, ?POSSIBLE_COMMANDS_LINE, "\e[1m Possible commands \e[0m", lightgrey),
   screen:writeXY(?INDENT + 19, ?POSSIBLE_COMMANDS_LINE,
-    "feed, heaterHigh, heaterNormal, heaterOff"                            , lightgrey),
+    "feed, heaterHigh, heaterNormal, heaterOff", lightgrey),
   screen:writeXY(?INDENT + 19, ?SECOND_POSSIBLE_COMMANDS_LINE,
     "heal, clean, end", lightgrey),
   screen:writeXY(?INDENT, ?INPUT_LINE, "Enter command: "),
@@ -115,7 +118,7 @@ printFish({FishType, LifeTime, _, _}, {Hunger, Speed, AliveTime, Healthy}, Numbe
   FishStringBlinking = io_lib:format("<>< ~p, alive time left = ~ph, Hunger = ~p%, Speed = ~pm/s \e[1;5m ~p \e[0m",
     [FishType, RoundedLife, RoundedHunger, RoundedSpeed, Healthy]),
   if
-    (RoundedHunger < 60)  ->
+    (RoundedHunger < 60) ->
       if
         (Healthy == healthy) ->
           screen:writeXY(?INDENT, LineNumber, FishString, green);
@@ -171,12 +174,13 @@ printAquariumState({{Temperature, HeaterLevel}, Dirt}) ->
   end,
   moveCursorToInputLine(),
   if
-      RoundedDirt < 60 ->
-        screen:writeXY(?INDENT, ?AQUARIUM_STATE_LINE_DIRT, io_lib:format("Dirt = ~p%", [RoundedDirt]), green);
-      (RoundedDirt > 59) and (RoundedDirt < 90) ->
-        screen:writeXY(?INDENT, ?AQUARIUM_STATE_LINE_DIRT, io_lib:format("Dirt = ~p%", [RoundedDirt]), yellow);
-      true -> screen:writeXY(?INDENT, ?AQUARIUM_STATE_LINE_DIRT, io_lib:format("Dirt = ~p%", [RoundedDirt]), red)
-    end,
+    RoundedDirt < 60 ->
+      screen:writeXY(?INDENT, ?AQUARIUM_STATE_LINE_DIRT, io_lib:format("Dirt = ~p%", [RoundedDirt]), green);
+    (RoundedDirt > 59) and (RoundedDirt < 90) ->
+      screen:writeXY(?INDENT, ?AQUARIUM_STATE_LINE_DIRT, io_lib:format("Dirt = ~p%", [RoundedDirt]), yellow);
+    true ->
+      screen:writeXY(?INDENT, ?AQUARIUM_STATE_LINE_DIRT, io_lib:format("Dirt = ~p%", [RoundedDirt]), red)
+  end,
   moveCursorToInputLine().
 
 printInfo(Message) ->
@@ -190,4 +194,8 @@ printClientBackground() ->
   screen:writeXY(?INDENT, ?POSSIBLE_COMMANDS_LINE,
     "Possible commands: end"),
   screen:writeXY(?INDENT, ?INPUT_LINE, "Enter command: "),
+  moveCursorToInputLine().
+
+clearInfoLine() ->
+  screen:clearXY(?INDENT, ?INFO_LINE, ?AQUARIUM_STATE_MAX_LEN),
   moveCursorToInputLine().
