@@ -10,7 +10,7 @@ start() ->
   StartingFish = [neon, danio],
   StartingAquariumState = aquariumState:startingAquariumState(),
   DispatcherPid = spawn(dispatcher, startDispatcher, [StartingFish, StartingAquariumState, PrinterPid]),
-  {_, Timer} = time:startTime(DispatcherPid),
+  Timer = time:startTime(DispatcherPid),
   Server = spawn(aquariumServer, startServer, [PrinterPid]),
   handleUserInput(DispatcherPid, PrinterPid, {Timer, Server}).
 

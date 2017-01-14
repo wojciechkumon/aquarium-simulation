@@ -18,7 +18,6 @@ startServer(PrinterPid, Port) ->
   end.
 
 waitForConnection(ServerSocket, PrinterPid) ->
-%%  PrinterPid ! {printInfo, "waiting"},
   case gen_tcp:accept(ServerSocket, ?TIMEOUT) of
     {ok, Socket} ->
       PrinterPid ! {printInfo, "new connection"},
@@ -34,27 +33,28 @@ closeOrContinue(ServerSocket, PrinterPid) ->
   receive
     {close, Pid} ->
       ShouldClose = true,
-      disconnect,
+      gen_tcp:close(ServerSocket),
       Pid ! closed
   after
     0 -> ShouldClose = false
   end,
   if
     ShouldClose == true ->
-      gen_tcp:close(ServerSocket);
+      ok;
     true -> waitForConnection(ServerSocket, PrinterPid)
   end.
 
 handleSocket(Socket, PrinterPid) ->
   case gen_tcp:recv(Socket, 0) of
-    {ok, "finish"} ->
-%%      PrinterPid ! {printInfo, "Connection closed, finish"},
+    {ok, "closeConnection"} ->
+      gen_tcp:send(Socket, "closing"),
+      gen_tcp:close(Socket),
       ok;
-    {ok, Data} ->
-      PrinterPid ! {printInfo, io_lib:format("Input ~p~n", [Data])},
-      gen_tcp:send(Socket, Data),
+    {ok, "checkAquariumState"} ->
+      PrinterPid ! {printInfo, io_lib:format("Input ~p~n", ["checkAquariumState"])},
+      gen_tcp:send(Socket, "superAquariumState, 10 fish!"),
       handleSocket(Socket, PrinterPid);
-    {error, closed} ->
-      PrinterPid ! {printInfo, "Connection closed, err"},
+    {error, Error} ->
+      PrinterPid ! {printInfo, io_lib:format("Connection error (~p)", [Error])},
       ok
   end.
