@@ -13,19 +13,16 @@ switchModeString(grey) -> "\e[2m";
 switchModeString(underline) -> "\e[4m";
 switchModeString(blinking) -> "\e[5m";
 switchModeString(negative) -> "\e[7m";
-switchModeString(blue) -> "\e[34m";
-switchModeString(lightblue) -> "\e[104m";
+
+switchModeString(lightblue) -> "\e[30;48;5;80m";
 switchModeString(seablue) -> "\e[38;5;45m";
 switchModeString(darkgrey) -> "\e[100m";
+switchModeString(lightgrey) -> "\e[30;48;5;254m";
 switchModeString(pink) -> "\e[95m";
-switchModeString(yellow) -> "\e[48;5;225m";
-switchModeString(green) -> "\e[42m";
-switchModeString(red) -> "\e[41m";
-switchModeString(ill) -> "\e[147m";
-switchModeString(guppyColor) -> "\e[48;5;208m";
-switchModeString(neonColor) -> "\e[48;5;91m";
-switchModeString(algaeEaterColor) -> "\e[48;5;64m";
-switchModeString(danioColor) -> "\e[48;5;205m".
+switchModeString(yellow) -> "\e[30;48;5;220m";
+switchModeString(green) -> "\e[30;48;5;76m";
+switchModeString(red) -> "\e[30;48;5;196m";
+switchModeString(blue) -> "\e[30;48;5;75m".
 
 escapeXY(X, Y) ->
   "\e[" ++ integer_to_list(Y) ++ ";" ++ integer_to_list(X) ++ "H".
