@@ -4,6 +4,7 @@
 
 -define(TCP_OPTIONS, [{active, false}, {packet, 2}]).
 
+%% Aquarium client main
 
 start() ->
   start(aquariumServer:defaultPort()).
@@ -12,26 +13,44 @@ start(Port) ->
   start(aquariumServer:defaultHost(), Port).
 
 start(Host, Port) ->
-  {ok, Socket} = gen_tcp:connect(Host, Port, aquariumServer:tcpOptions()),
-  loop(Socket).
-
-loop(Sock) ->
-  Message = "y",
-  case gen_tcp:send(Sock, [Message]) of
-    {error, timeout} ->
-      io:format("Send timeout, closing!~n", []),
-      handle_send_timeout(),
-      gen_tcp:close(Sock);
-    {error, OtherSendError} ->
-      io:format("Some other error on socket (~p), closing", [OtherSendError]),
-      gen_tcp:close(Sock);
-    ok ->
-      io:format("OK"),
-      gen_tcp:send(Sock, ["finish"]),
-      gen_tcp:close(Sock)
-%%      loop(Sock)
+  Socket = connectWithServer(Host, Port),
+  if
+    Socket /= error ->
+      io:format("Connected"),
+      SocketHandler = spawn(socketHandlerForClient, handleSocket, [Socket]),
+      Refresher = spawn(clientRefresher, startAquariumRefresher, [SocketHandler]),
+      handleInput(SocketHandler, Refresher);
+    true -> ok
   end.
 
+connectWithServer(Host, Port) ->
+  case gen_tcp:connect(Host, Port, aquariumServer:tcpOptions()) of
+    {ok, Socket} ->
+      Socket;
+    {error, Error} ->
+      io:format("Error while connecting with server (~p)~n", [Error]),
+      error
+  end.
 
-handle_send_timeout() ->
-  io:format("Error while sending message").
+handleInput(SocketHandler, Refresher) ->
+  Input = readLine(),
+  if
+    Input == "end" ->
+      handleEnd(SocketHandler, Refresher);
+    true ->
+      io:format("wrong command!~n"),
+      handleInput(SocketHandler, Refresher)
+  end.
+
+readLine() ->
+  string:strip(io:get_line(""), right, $\n).
+
+handleEnd(SocketHandler, Refresher) ->
+  Refresher ! {stop, self()},
+  receive
+    stopped -> ok
+  end,
+  SocketHandler ! {closeConnection, self()},
+  receive
+    closed -> ok
+  end.
