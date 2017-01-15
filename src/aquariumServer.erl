@@ -1,6 +1,6 @@
 -module(aquariumServer).
 
--export([startServer/1, startServer/2, defaultHost/0, defaultPort/0, tcpOptions/0]).
+-export([startServer/2, defaultHost/0, defaultPort/0, tcpOptions/0]).
 
 -define(INFO_LINE_TIMEOUT, 2000).
 -define(TIMEOUT, 100).
@@ -9,11 +9,8 @@ defaultHost() -> "localhost".
 defaultPort() -> 11111.
 tcpOptions() -> [{active, false}, {packet, 2}].
 
-startServer(Pids) ->
-  startServer(Pids, defaultPort()).
-
-startServer({PrinterPid, DispatcherPid}, Port) ->
-  case gen_tcp:listen(Port, tcpOptions()) of
+startServer(ServerPort, {PrinterPid, DispatcherPid}) ->
+  case gen_tcp:listen(ServerPort, tcpOptions()) of
     {ok, ServerSocket} -> waitForConnection(ServerSocket, {PrinterPid, DispatcherPid});
     {error, Error} ->
       PrinterPid ! {printInfo, io_lib:format("Server error (~p)", [Error])},

@@ -1,17 +1,20 @@
 -module(aquarium).
 
--export([start/0]).
+-export([start/0, start/1]).
 
 % Main process
 
 start() ->
+  start(aquariumServer:defaultPort()).
+
+start(ServerPort) ->
   PrinterPid = spawn(printer, startPrinter, []),
   PrinterPid ! printBackground,
   StartingFish = [neon, danio],
   StartingAquariumState = aquariumState:startingAquariumState(),
   DispatcherPid = spawn(dispatcher, startDispatcher, [StartingFish, StartingAquariumState, PrinterPid]),
   Timer = time:startTime(DispatcherPid),
-  Server = spawn(aquariumServer, startServer, [{PrinterPid, DispatcherPid}]),
+  Server = spawn(aquariumServer, startServer, [ServerPort, {PrinterPid, DispatcherPid}]),
   handleUserInput(DispatcherPid, PrinterPid, {Timer, Server}).
 
 handleUserInput(DispatcherPid, PrinterPid, ToClose) ->

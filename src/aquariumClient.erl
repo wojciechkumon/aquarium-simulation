@@ -7,10 +7,10 @@
 %% Aquarium client main
 
 start() ->
-  start(aquariumServer:defaultPort()).
+  start(aquariumServer:defaultHost()).
 
-start(Port) ->
-  start(aquariumServer:defaultHost(), Port).
+start(Host) ->
+  start(Host, aquariumServer:defaultPort()).
 
 start(Host, Port) ->
   PrinterPid = spawn(printer, startPrinter, []),
