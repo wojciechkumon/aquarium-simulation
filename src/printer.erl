@@ -192,7 +192,7 @@ printClientBackground() ->
   screen:clearScreen(),
   screen:writeXY(?TITLE_INDENT, ?TITLE_LINE, "##### AQUARIUM CLIENT #####", lightblue),
   screen:writeXY(?INDENT, ?POSSIBLE_COMMANDS_LINE,
-    "Possible commands: end"),
+    "Possible commands: feed, heaterHigh, heaterNormal, heaterOff, end"),
   screen:writeXY(?INDENT, ?INPUT_LINE, "Enter command: "),
   moveCursorToInputLine().
 

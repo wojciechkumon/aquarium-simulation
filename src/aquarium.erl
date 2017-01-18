@@ -63,4 +63,5 @@ cleanUp({Timer, Server}, PrinterPid) ->
   receive
     closed -> ok
   end,
-  PrinterPid ! clearScreen.
+  PrinterPid ! clearScreen,
+  io:format("cleaned~n").

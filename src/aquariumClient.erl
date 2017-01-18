@@ -38,6 +38,18 @@ connectWithServer(Host, Port, PrinterPid) ->
 handleInput(SocketHandler, Refresher, PrinterPid) ->
   Input = printer:readLine(),
   if
+    Input == "feed" ->
+      Refresher ! feed,
+      handleInput(SocketHandler, Refresher, PrinterPid);
+    Input == "heaterHigh" ->
+      Refresher ! {heater, high},
+      handleInput(SocketHandler, Refresher, PrinterPid);
+    Input == "heaterNormal" ->
+      Refresher ! {heater, normal},
+      handleInput(SocketHandler, Refresher, PrinterPid);
+    Input == "heaterOff" ->
+      Refresher ! {heater, off},
+      handleInput(SocketHandler, Refresher, PrinterPid);
     Input == "end" ->
       handleEnd(SocketHandler, Refresher, PrinterPid);
     true ->

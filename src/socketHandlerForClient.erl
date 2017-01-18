@@ -10,6 +10,18 @@ handleSocket(Socket, PrinterPid) ->
       Response = sendRequest(Socket, PrinterPid, "checkAquariumState"),
       Pid ! {response, Response},
       handleSocket(Socket, PrinterPid);
+    {feed, _} ->
+      sendRequest(Socket, PrinterPid, "feed"),
+      handleSocket(Socket, PrinterPid);
+    {heater, high} ->
+      sendRequest(Socket, PrinterPid, "heaterHigh"),
+      handleSocket(Socket, PrinterPid);
+    {heater, normal} ->
+      sendRequest(Socket, PrinterPid, "heaterNormal"),
+      handleSocket(Socket, PrinterPid);
+    {heater, off} ->
+      sendRequest(Socket, PrinterPid, "heaterOff"),
+      handleSocket(Socket, PrinterPid);
     {closeConnection, Pid} ->
       sendRequest(Socket, PrinterPid, "closeConnection"),
       Pid ! closed

@@ -27,40 +27,52 @@ waitForConnection(ServerSocket, {PrinterPid, DispatcherPid}) ->
     {ok, Socket} ->
       PrinterPid ! {printInfo, "new connection"},
       timer:send_after(?INFO_LINE_TIMEOUT, PrinterPid, clearInfoLine),
-      spawn(fun() -> handleSocket(Socket, {PrinterPid, DispatcherPid}) end),
+      spawn(fun() -> handleSocket(Socket, {PrinterPid, DispatcherPid}, self()) end),
       closeOrContinue(ServerSocket, {PrinterPid, DispatcherPid});
     {error, timeout} ->
       closeOrContinue(ServerSocket, {PrinterPid, DispatcherPid});
     {error, Error} ->
-      PrinterPid ! {printInfo, io_lib:format("Connection accept error (~p)~n", [Error])}
+      PrinterPid ! {printInfo, io_lib:format("Connection accept error (~p)~n", [Error])},
+      waitForClose()
   end.
 
 closeOrContinue(ServerSocket, {PrinterPid, DispatcherPid}) ->
   receive
     {close, Pid} ->
-      ShouldClose = true,
       gen_tcp:close(ServerSocket),
       Pid ! closed
   after
-    0 -> ShouldClose = false
-  end,
-  if
-    ShouldClose == true ->
-      ok;
-    true -> waitForConnection(ServerSocket, {PrinterPid, DispatcherPid})
+    0 -> waitForConnection(ServerSocket, {PrinterPid, DispatcherPid})
   end.
 
-handleSocket(Socket, {PrinterPid, DispatcherPid}) ->
+handleSocket(Socket, {PrinterPid, DispatcherPid}, ServerPid) ->
   case gen_tcp:recv(Socket, 0) of
+    {ok, "checkAquariumState"} ->
+      CurrentAquariumStateString = getCurrentAquariumState(DispatcherPid),
+      gen_tcp:send(Socket, CurrentAquariumStateString),
+      handleSocket(Socket, {PrinterPid, DispatcherPid}, ServerPid);
+    {ok, "feed"} ->
+      DispatcherPid ! feed,
+      gen_tcp:send(Socket, "ok"),
+      handleSocket(Socket, {PrinterPid, DispatcherPid}, ServerPid);
+    {ok, "heaterHigh"} ->
+      DispatcherPid ! {heater, high},
+      gen_tcp:send(Socket, "ok"),
+      handleSocket(Socket, {PrinterPid, DispatcherPid}, ServerPid);
+    {ok, "heaterNormal"} ->
+      DispatcherPid ! {heater, normal},
+      gen_tcp:send(Socket, "ok"),
+      handleSocket(Socket, {PrinterPid, DispatcherPid}, ServerPid);
+    {ok, "heaterOff"} ->
+      DispatcherPid ! {heater, off},
+      gen_tcp:send(Socket, "ok"),
+      handleSocket(Socket, {PrinterPid, DispatcherPid}, ServerPid);
     {ok, "closeConnection"} ->
       gen_tcp:send(Socket, "closing"),
       gen_tcp:close(Socket),
       ok;
-    {ok, "checkAquariumState"} ->
-      CurrentAquariumStateString = getCurrentAquariumState(DispatcherPid),
-      gen_tcp:send(Socket, CurrentAquariumStateString),
-      handleSocket(Socket, {PrinterPid, DispatcherPid});
     {error, Error} ->
+      gen_tcp:close(Socket),
       PrinterPid ! {printInfo, io_lib:format("Connection error (~p)", [Error])},
       ok
   end.

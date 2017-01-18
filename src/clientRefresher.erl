@@ -15,6 +15,12 @@ refresherLoop(SocketHandler, {Timer, PrinterPid}) ->
     timeStep ->
       handleRefresh(SocketHandler, {Timer, PrinterPid}),
       refresherLoop(SocketHandler, {Timer, PrinterPid});
+    feed ->
+      SocketHandler ! {feed, self()},
+      refresherLoop(SocketHandler, {Timer, PrinterPid});
+    {heater, Level} ->
+      SocketHandler ! {heater, Level},
+      refresherLoop(SocketHandler, {Timer, PrinterPid});
     {stop, Pid} ->
       timer:cancel(Timer),
       Pid ! stopped
