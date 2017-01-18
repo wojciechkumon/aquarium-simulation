@@ -10,7 +10,7 @@ start() ->
 start(ServerPort) ->
   PrinterPid = spawn(printer, startPrinter, []),
   PrinterPid ! printBackground,
-  StartingFish = [neon, danio],
+  StartingFish = [neon, danio, guppy, algaeEater],
   StartingAquariumState = aquariumState:startingAquariumState(),
   DispatcherPid = spawn(dispatcher, startDispatcher, [StartingFish, StartingAquariumState, PrinterPid]),
   Timer = time:startTime(DispatcherPid),

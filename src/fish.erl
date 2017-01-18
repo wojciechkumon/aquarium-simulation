@@ -53,10 +53,10 @@ printFish(PrinterPid, FishConstants, Hunger, Speed, AliveTime, {ill, _}, Number)
 % {FishType, MaxLifeTime, HungerSpeed, MaxSpeed}
 % MaxLifeTime - in timeSteps
 % HungerSpeed - per timeStep
-getFishConstants(neon) -> {neon, 1440, 5, 10};
-getFishConstants(danio) -> {danio, 800, 3, 15};
-getFishConstants(guppy) -> {guppy, 900, 4, 7};
-getFishConstants(algaeEater) -> {algaeEater, 2500, 1, 12}.
+getFishConstants(neon) -> {neon, 365 * 1440, 1.4, 10};
+getFishConstants(danio) -> {danio, 250 * 1440, 0.8, 15};
+getFishConstants(guppy) -> {guppy, 390 * 1440, 1, 7};
+getFishConstants(algaeEater) -> {algaeEater, 700 * 1440, 0.1, 12}.
 
 % {Hunger, Speed, AliveTime, Healthy}
 getFishStartingStats({_, _, _, MaxSpeed}) ->
@@ -117,10 +117,10 @@ nextStepCondition({ill, DeathTimer}) ->
   {ill, DeathTimer - 1};
 
 nextStepCondition(healthy) ->
-  RandomNumber = rand:uniform(1000),
+  RandomNumber = rand:uniform(14 * 1440),
   if
     RandomNumber == 1 ->
-      DeathTimer = 60 + rand:uniform(540),
+      DeathTimer = 360 + rand:uniform(540),
       {ill, DeathTimer};
     true -> healthy
   end.
